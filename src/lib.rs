@@ -10,7 +10,7 @@ pub mod lib {
 
 use lib::catalog::{Media, Table, MediaCatalog, TableCatalog};
 use lib::hash::{calculate_crc32 as rust_calculate_crc32, calculate_md5 as rust_calculate_md5, calculate_xxhash as rust_calculate_xxhash};
-use lib::table_encryption::table_encryption_service::{xor as rust_xor, convert_string as rust_convert_string, new_encrypt_string as rust_new_encrypt_string, create_key as rust_create_key};
+use lib::table_encryption::table_encryption_service::{xor as rust_xor, convert_string as rust_convert_string, new_encrypt_string as rust_new_encrypt_string, create_key as rust_create_key, convert_int as rust_convert_int, convert_long as rust_convert_long, convert_uint as rust_convert_uint, convert_ulong as rust_convert_ulong, convert_float as rust_convert_float, convert_double as rust_convert_double};
 use lib::table_zip::TableZipFile;
 use std::fs::File;
 use std::io::Cursor;
@@ -296,6 +296,36 @@ fn create_key(_py: Python<'_>, bytes: &[u8]) -> Vec<u8> {
     rust_create_key(bytes).to_vec()
 }
 
+#[pyfunction]
+fn convert_int(value: i32, _py: Python<'_>, key: &[u8]) -> i32 {
+    rust_convert_int(value, key)
+}
+
+#[pyfunction]
+fn convert_long(value: i64, _py: Python<'_>, key: &[u8]) -> i64 {
+    rust_convert_long(value, key)
+}
+
+#[pyfunction]
+fn convert_uint(value: u32, _py: Python<'_>, key: &[u8]) -> u32 {
+    rust_convert_uint(value, key)
+}
+
+#[pyfunction]
+fn convert_ulong(value: u64, _py: Python<'_>, key: &[u8]) -> u64 {
+    rust_convert_ulong(value, key)
+}
+
+#[pyfunction]
+fn convert_float(value: f32, _py: Python<'_>, key: &[u8]) -> f32 {
+    rust_convert_float(value, key)
+}
+
+#[pyfunction]
+fn convert_double(value: f64, _py: Python<'_>, key: &[u8]) -> f64 {
+    rust_convert_double(value, key)
+}
+
 #[pymodule]
 fn bacy(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyMedia>()?;
@@ -311,5 +341,11 @@ fn bacy(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(convert_string, m)?)?;
     m.add_function(wrap_pyfunction!(new_encrypt_string, m)?)?;
     m.add_function(wrap_pyfunction!(create_key, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_int, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_long, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_uint, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_ulong, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_float, m)?)?;
+    m.add_function(wrap_pyfunction!(convert_double, m)?)?;
     Ok(())
 } 
