@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - pyo3
       - master
     tags:
       - '*'
