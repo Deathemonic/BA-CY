@@ -12,8 +12,6 @@ use lib::catalog::{Media, Table, MediaCatalog, TableCatalog};
 use lib::hash::{calculate_crc32 as rust_calculate_crc32, calculate_md5 as rust_calculate_md5, calculate_xxhash as rust_calculate_xxhash};
 use lib::table_encryption::table_encryption_service::{xor as rust_xor, convert_string as rust_convert_string, new_encrypt_string as rust_new_encrypt_string, create_key as rust_create_key, convert_int as rust_convert_int, convert_long as rust_convert_long, convert_uint as rust_convert_uint, convert_ulong as rust_convert_ulong, convert_float as rust_convert_float, convert_double as rust_convert_double};
 use lib::table_zip::TableZipFile;
-use std::fs::File;
-use std::io::Cursor;
 use std::collections::HashMap;
 
 #[pyclass(name = "Media")]
