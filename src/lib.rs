@@ -3,9 +3,11 @@ pub mod lib {
     pub mod hash;
     pub mod memorypack;
     pub mod table_encryption;
+    pub mod table_zip;
 }
 
 pub use lib::catalog::*;
 pub use lib::hash::*;
 pub use lib::memorypack::*;
-pub use lib::table_encryption::*; 
+pub use lib::table_encryption::*;
+pub use lib::table_zip::*; 
