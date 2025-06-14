@@ -186,41 +186,24 @@ impl PyTableCatalog {
 
 #[pyclass(name = "TableZipFile")]
 pub struct PyTableZipFile {
-    inner: TableZipFile<File>,
+    inner: TableZipFile,
 }
 
 #[pymethods]
 impl PyTableZipFile {
     #[new]
-    pub fn new(path: String, password: Option<Vec<u8>>) -> PyResult<Self> {
-        TableZipFile::from_path(path, password)
-            .map(|inner| Self { inner })
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
+    pub fn new(bytes: Vec<u8>, file_name: String) -> Self {
+        Self {
+            inner: TableZipFile::new(bytes, file_name)
+        }
     }
 
-    pub fn open(&mut self, name: &str) -> PyResult<Vec<u8>> {
-        self.inner.open(name)
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
-    }
-}
-
-#[pyclass(name = "TableZipBytes")]
-pub struct PyTableZipBytes {
-    inner: TableZipFile<Cursor<Vec<u8>>>,
-}
-
-#[pymethods]
-impl PyTableZipBytes {
-    #[new]
-    pub fn new(bytes: Vec<u8>, password: Option<Vec<u8>>, file_name: Option<String>) -> PyResult<Self> {
-        TableZipFile::from_bytes(bytes, password, file_name.as_deref())
-            .map(|inner| Self { inner })
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
+    pub fn get_by_name(&mut self, name: &str) -> Vec<u8> {
+        self.inner.get_by_name(name)
     }
 
-    pub fn open(&mut self, name: &str) -> PyResult<Vec<u8>> {
-        self.inner.open(name)
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
+    pub fn extract_all(&mut self) -> Vec<(String, Vec<u8>)> {
+        self.inner.extract_all()
     }
 }
 
@@ -333,7 +316,6 @@ fn bacy(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyMediaCatalog>()?;
     m.add_class::<PyTableCatalog>()?;
     m.add_class::<PyTableZipFile>()?;
-    m.add_class::<PyTableZipBytes>()?;
     m.add_function(wrap_pyfunction!(calculate_crc32, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_md5, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_xxhash, m)?)?;
