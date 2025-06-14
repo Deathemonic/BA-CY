@@ -5,7 +5,7 @@ edition = "2024"
 
 [lib]
 name = "bacy"
-path = "src/lib.rs"
+crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.98"
@@ -18,3 +18,4 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 xxhash-rust = { version = "0.8.15", features = ["xxh32"] }
 zip = { version = "4.0.0", features = ["aes-crypto", "deflate"] }
+pyo3 = { version = "0.25.0", features = ["extension-module"] }
