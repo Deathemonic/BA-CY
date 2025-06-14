@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::memorypack;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};

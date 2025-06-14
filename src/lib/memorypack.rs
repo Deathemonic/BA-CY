@@ -18,7 +18,6 @@ pub fn read_i8(cursor: &mut Cursor<&[u8]>) -> Result<i8> {
     Ok(cursor.read_i8()?)
 }
 
-#[allow(dead_code)]
 pub fn read_i16(cursor: &mut Cursor<&[u8]>) -> Result<i16> {
     Ok(cursor.read_i16::<LittleEndian>()?)
 }

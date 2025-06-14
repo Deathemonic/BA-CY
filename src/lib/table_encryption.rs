@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub mod table_encryption_service {
     use anyhow::Result;
     use base64::{Engine, engine::general_purpose};
@@ -122,7 +120,6 @@ pub mod table_encryption_service {
         if value != 0 { xor_uint32(value, key) } else { 0 }
     }
 
-    #[allow(dead_code)]
     pub fn convert_ulong(value: u64, key: &[u8]) -> u64 {
         if value != 0 { xor_uint64(value, key) } else { 0 }
     }
@@ -139,7 +136,6 @@ pub mod table_encryption_service {
         (value / modulus as f32) / 10000.0
     }
 
-    #[allow(dead_code)]
     pub fn convert_double(value: f64, key: &[u8]) -> f64 {
         convert_float(value as f32, key) as f64
     }
@@ -156,7 +152,6 @@ pub mod table_encryption_service {
         (value * 10000.0) * modulus as f32
     }
 
-    #[allow(dead_code)]
     pub fn encrypt_double(value: f64, key: &[u8]) -> f64 {
         encrypt_float(value as f32, key) as f64
     }
