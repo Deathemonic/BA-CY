@@ -9,5 +9,5 @@ BA-CY is a library for handling **Blue Archive** catalog and table operations, s
 Add it using [`uv`](https://docs.astral.sh/uv/)
 
 ```bash
-uv add git+https://github.com/Deathemonic/BA-CY@pyo3
+uv add bacy
 ```
