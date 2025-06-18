@@ -2,6 +2,11 @@ name: Upload PyPI
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: ''
+        required: false
+        type: string
   release:
     types: [published]
 
@@ -25,17 +30,33 @@ jobs:
         python -m pip install --upgrade pip
         pip install twine
     
-    - name: Get latest release
+    - name: Get release
       id: get_release
       uses: actions/github-script@v7
       with:
         script: |
-          const { data: release } = await github.rest.repos.getLatestRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          });
+          let release;
+          const releaseTag = '${{ github.event.inputs.release_tag }}';
           
-          console.log(`Latest release: ${release.tag_name}`);
+          if (releaseTag) {
+            console.log(`Getting release for tag: ${releaseTag}`);
+            const { data } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: releaseTag
+            });
+            release = data;
+          } else {
+            // Get latest release
+            console.log('Getting latest release');
+            const { data } = await github.rest.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            release = data;
+          }
+          
+          console.log(`Using release: ${release.tag_name}`);
           core.setOutput('release_id', release.id);
           core.setOutput('tag_name', release.tag_name);
           return release;
@@ -98,4 +119,3 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         python -m twine upload dist/* --verbose
-    
