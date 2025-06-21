@@ -7,6 +7,16 @@ use std::marker::PhantomData;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
+pub struct Asset {
+    pub name: String,
+    pub size: i64,
+    pub is_prologue: bool,
+    pub crc: i64,
+    pub is_split_download: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "PascalCase")]
 pub struct Media {
     pub path: String,
     pub file_name: String,
