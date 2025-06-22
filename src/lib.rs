@@ -190,18 +190,20 @@ pub struct PyTableZipFile {
 #[pymethods]
 impl PyTableZipFile {
     #[new]
-    pub fn new(bytes: Vec<u8>, file_name: String) -> Self {
-        Self {
-            inner: TableZipFile::new(bytes, file_name)
-        }
+    pub fn new(bytes: Vec<u8>, file_name: String) -> PyResult<Self> {
+        let inner = TableZipFile::new(bytes, file_name)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+        Ok(Self { inner })
     }
 
-    pub fn get_by_name(&mut self, name: &str) -> Vec<u8> {
+    pub fn get_by_name(&mut self, name: &str) -> PyResult<Vec<u8>> {
         self.inner.get_by_name(name)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
     }
 
-    pub fn extract_all(&mut self) -> Vec<(String, Vec<u8>)> {
+    pub fn extract_all(&mut self) -> PyResult<Vec<(String, Vec<u8>)>> {
         self.inner.extract_all()
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
     }
 }
 
@@ -251,59 +253,59 @@ fn calculate_md5(path: String) -> PyResult<String> {
 }
 
 #[pyfunction]
-fn calculate_xxhash(_py: Python<'_>, bytes: &[u8]) -> u32 {
+fn calculate_xxhash(bytes: &[u8]) -> u32 {
     rust_calculate_xxhash(bytes)
 }
 
 #[pyfunction]
-fn xor(name: &str, _py: Python<'_>, data: &[u8]) -> Vec<u8> {
+fn xor(name: &str, data: &[u8]) -> Vec<u8> {
     rust_xor(name, data)
 }
 
 #[pyfunction]
-fn convert_string(value: &str, _py: Python<'_>, key: &[u8]) -> PyResult<String> {
+fn convert_string(value: &str, key: &[u8]) -> PyResult<String> {
     rust_convert_string(value, key)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
 }
 
 #[pyfunction]
-fn new_encrypt_string(value: &str, _py: Python<'_>, key: &[u8]) -> PyResult<String> {
+fn new_encrypt_string(value: &str, key: &[u8]) -> PyResult<String> {
     rust_new_encrypt_string(value, key)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))
 }
 
 #[pyfunction]
-fn create_key(_py: Python<'_>, bytes: &[u8]) -> Vec<u8> {
+fn create_key(bytes: &[u8]) -> Vec<u8> {
     rust_create_key(bytes).to_vec()
 }
 
 #[pyfunction]
-fn convert_int(value: i32, _py: Python<'_>, key: &[u8]) -> i32 {
+fn convert_int(value: i32, key: &[u8]) -> i32 {
     rust_convert_int(value, key)
 }
 
 #[pyfunction]
-fn convert_long(value: i64, _py: Python<'_>, key: &[u8]) -> i64 {
+fn convert_long(value: i64, key: &[u8]) -> i64 {
     rust_convert_long(value, key)
 }
 
 #[pyfunction]
-fn convert_uint(value: u32, _py: Python<'_>, key: &[u8]) -> u32 {
+fn convert_uint(value: u32, key: &[u8]) -> u32 {
     rust_convert_uint(value, key)
 }
 
 #[pyfunction]
-fn convert_ulong(value: u64, _py: Python<'_>, key: &[u8]) -> u64 {
+fn convert_ulong(value: u64, key: &[u8]) -> u64 {
     rust_convert_ulong(value, key)
 }
 
 #[pyfunction]
-fn convert_float(value: f32, _py: Python<'_>, key: &[u8]) -> f32 {
+fn convert_float(value: f32, key: &[u8]) -> f32 {
     rust_convert_float(value, key)
 }
 
 #[pyfunction]
-fn convert_double(value: f64, _py: Python<'_>, key: &[u8]) -> f64 {
+fn convert_double(value: f64, key: &[u8]) -> f64 {
     rust_convert_double(value, key)
 }
 
@@ -328,4 +330,4 @@ fn bacy(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(convert_float, m)?)?;
     m.add_function(wrap_pyfunction!(convert_double, m)?)?;
     Ok(())
-} 
+}
