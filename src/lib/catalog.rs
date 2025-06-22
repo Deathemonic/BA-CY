@@ -43,10 +43,10 @@ pub struct Table {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Catalog<T> {
-    table: HashMap<String, T>,
+    pub table: HashMap<String, T>,
 
     #[serde(skip)]
-    base_url: String,
+    pub base_url: String,
 
     #[serde(skip)]
     _phantom: PhantomData<T>,
