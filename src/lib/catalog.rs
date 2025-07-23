@@ -7,6 +7,26 @@ use std::marker::PhantomData;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
+pub struct Packing {
+    pub milestone: String,
+    pub patch_version: i64,
+    pub full_patch_packs: Patch,
+    pub update_packs: Patch,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct Patch {
+    pack_name: String,
+    pack_size: i64,
+    crc: i64,
+    is_prologue: bool,
+    is_split_download: bool,
+    bundle_files: Asset
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "PascalCase")]
 pub struct Asset {
     pub name: String,
     pub size: i64,
