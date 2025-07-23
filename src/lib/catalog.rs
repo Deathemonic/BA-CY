@@ -10,8 +10,8 @@ use std::marker::PhantomData;
 pub struct Packing {
     pub milestone: String,
     pub patch_version: i64,
-    pub full_patch_packs: Patch,
-    pub update_packs: Patch,
+    pub full_patch_packs: Vec<Patch>,
+    pub update_packs: Vec<Patch>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -22,7 +22,7 @@ pub struct Patch {
     pub crc: i64,
     pub is_prologue: bool,
     pub is_split_download: bool,
-    pub bundle_files: Asset
+    pub bundle_files: Vec<Asset>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
