@@ -17,12 +17,12 @@ pub struct Packing {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Patch {
-    pack_name: String,
-    pack_size: i64,
-    crc: i64,
-    is_prologue: bool,
-    is_split_download: bool,
-    bundle_files: Asset
+    pub pack_name: String,
+    pub pack_size: i64,
+    pub crc: i64,
+    pub is_prologue: bool,
+    pub is_split_download: bool,
+    pub bundle_files: Asset
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
