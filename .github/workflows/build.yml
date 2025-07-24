@@ -1,0 +1,310 @@
+name: Build Multi-Language Bindings
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-bindings:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x86_64
+            lib_name: libbacy.so
+            languages: [python, kotlin, ruby]
+          
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos-x86_64
+            lib_name: libbacy.dylib
+            languages: [python, swift, ruby]
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos-arm64
+            lib_name: libbacy.dylib
+            languages: [python, swift, ruby]
+          
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows-x64
+            lib_name: bacy.dll
+            languages: [python, kotlin, ruby]
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Java (for Kotlin)
+        if: contains(matrix.languages, 'kotlin')
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Swift (macOS only)
+        if: contains(matrix.languages, 'swift') && runner.os == 'macOS'
+        run: |
+          # Swift is pre-installed on macOS runners
+          swift --version
+      
+      - name: Setup Ruby
+        if: contains(matrix.languages, 'ruby')
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      
+      - name: Cache Cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build Rust library
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+      
+      - name: Copy library to src directory
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cp target/${{ matrix.target }}/release/bacy.dll src/libuniffi_bacy.dll
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            cp target/${{ matrix.target }}/release/libbacy.dylib src/libuniffi_bacy.dylib
+          else
+            cp target/${{ matrix.target }}/release/libbacy.so src/libuniffi_bacy.so
+          fi
+      
+      - name: Generate Python bindings
+        if: contains(matrix.languages, 'python')
+        run: |
+          cargo run --bin bindgen generate src/bacy.udl --language python --out-dir bindings/python
+      
+      - name: Generate Kotlin bindings
+        if: contains(matrix.languages, 'kotlin')
+        run: |
+          cargo run --bin bindgen generate src/bacy.udl --language kotlin --out-dir bindings/kotlin
+      
+      - name: Generate Swift bindings
+        if: contains(matrix.languages, 'swift')
+        run: |
+          cargo run --bin bindgen generate src/bacy.udl --language swift --out-dir bindings/swift
+      
+      - name: Generate Ruby bindings
+        if: contains(matrix.languages, 'ruby')
+        run: |
+          cargo run --bin bindgen generate src/bacy.udl --language ruby --out-dir bindings/ruby
+      
+      - name: Create example files
+        shell: bash
+        run: |
+          mkdir -p examples
+          
+          # Python example
+          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " python " ]]; then
+            cat > examples/example.py << 'EOF'
+          import bacy
+          
+          # Test hash functions
+          print("Testing bacy hash functions...")
+          
+          # Test CRC32 calculation from file
+          try:
+              crc = bacy.calculate_crc32("README.md")
+              print(f"CRC32 of README.md: {crc}")
+          except Exception as e:
+              print(f"CRC32 error: {e}")
+          
+          # Test CRC32 evaluation from bytes
+          result = bacy.evaluate_crc32(b"hello world")
+          print(f"CRC32 of 'hello world': {result.value} (hex: {result.hex})")
+          
+          # Test xxHash calculation from bytes
+          xxhash = bacy.calculate_xxhash(b"hello world")
+          print(f"xxHash of 'hello world': {xxhash}")
+          
+          print("All tests completed!")
+          EOF
+          fi
+          
+          # Kotlin example
+          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " kotlin " ]]; then
+            cat > examples/Example.kt << 'EOF'
+          import bacy.*
+          
+          fun main() {
+              println("Testing bacy hash functions...")
+              
+              // Test CRC32 evaluation from bytes
+              val result = evaluateCrc32("hello world".toByteArray())
+              println("CRC32 of 'hello world': ${result.value} (hex: ${result.hex})")
+              
+              // Test xxHash calculation from bytes
+              val xxhash = calculateXxhash("hello world".toByteArray())
+              println("xxHash of 'hello world': $xxhash")
+              
+              println("All tests completed!")
+          }
+          EOF
+          fi
+          
+          # Swift example
+          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " swift " ]]; then
+            cat > examples/example.swift << 'EOF'
+          import Foundation
+          
+          print("Testing bacy hash functions...")
+          
+          // Test CRC32 evaluation from bytes
+          let data = "hello world".data(using: .utf8)!
+          let result = evaluateCrc32(data: Array(data))
+          print("CRC32 of 'hello world': \(result.value) (hex: \(result.hex))")
+          
+          // Test xxHash calculation from bytes
+          let xxhash = calculateXxhash(bytes: Array(data))
+          print("xxHash of 'hello world': \(xxhash)")
+          
+          print("All tests completed!")
+          EOF
+          fi
+          
+          # Ruby example
+          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " ruby " ]]; then
+            cat > examples/example.rb << 'EOF'
+          require_relative '../bacy'
+          
+          puts "Testing bacy hash functions..."
+          
+          # Test CRC32 evaluation from bytes
+          result = Bacy.evaluate_crc32("hello world".bytes)
+          puts "CRC32 of 'hello world': #{result.value} (hex: #{result.hex})"
+          
+          # Test xxHash calculation from bytes
+          xxhash = Bacy.calculate_xxhash("hello world".bytes)
+          puts "xxHash of 'hello world': #{xxhash}"
+          
+          puts "All tests completed!"
+          EOF
+          fi
+      
+      - name: Package releases
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME:-dev}
+          
+          for lang in ${{ join(matrix.languages, ' ') }}; do
+            PACKAGE_NAME="bacy-${VERSION}-${lang}-${{ matrix.platform }}"
+            mkdir -p "releases/${PACKAGE_NAME}"
+            
+            # Copy library
+            if [[ -f "src/libuniffi_bacy.so" ]]; then
+              cp src/libuniffi_bacy.so "releases/${PACKAGE_NAME}/"
+            elif [[ -f "src/libuniffi_bacy.dylib" ]]; then
+              cp src/libuniffi_bacy.dylib "releases/${PACKAGE_NAME}/"
+            elif [[ -f "src/libuniffi_bacy.dll" ]]; then
+              cp src/libuniffi_bacy.dll "releases/${PACKAGE_NAME}/"
+            fi
+            
+            # Copy language-specific bindings
+            if [[ -d "bindings/${lang}" ]]; then
+              cp -r bindings/${lang}/* "releases/${PACKAGE_NAME}/"
+            fi
+            
+            # Copy examples
+            if [[ "${lang}" == "python" && -f "examples/example.py" ]]; then
+              cp examples/example.py "releases/${PACKAGE_NAME}/"
+            elif [[ "${lang}" == "kotlin" && -f "examples/Example.kt" ]]; then
+              cp examples/Example.kt "releases/${PACKAGE_NAME}/"
+            elif [[ "${lang}" == "swift" && -f "examples/example.swift" ]]; then
+              cp examples/example.swift "releases/${PACKAGE_NAME}/"
+            elif [[ "${lang}" == "ruby" && -f "examples/example.rb" ]]; then
+              cp examples/example.rb "releases/${PACKAGE_NAME}/"
+            fi
+            
+            # Create README
+            cat > "releases/${PACKAGE_NAME}/README.md" << EOF
+          # Bacy ${VERSION} - ${lang^} Bindings for ${{ matrix.platform }}
+          
+          Pre-compiled ${lang^} bindings for the Bacy library.
+          
+          ## Usage
+          
+          ### ${lang^}
+          \`\`\`${lang}
+          $(cat examples/example.${lang} 2>/dev/null || echo "See example.${lang} for usage")
+          \`\`\`
+          
+          ## Files
+          - \`${lang}.${lang}\` - Generated bindings
+          - \`libuniffi_bacy.*\` - Native library
+          - \`example.${lang}\` - Usage example
+          
+          ## Platform
+          - OS: ${{ runner.os }}
+          - Architecture: ${{ matrix.platform }}
+          - Target: ${{ matrix.target }}
+          EOF
+            
+            # Create archive
+            cd releases
+            if [[ "${{ runner.os }}" == "Windows" ]]; then
+              7z a "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}/"
+            else
+              tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}/"
+            fi
+            cd ..
+          done
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bindings-${{ matrix.platform }}
+          path: releases/*
+          retention-days: 30
+
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-bindings
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          find artifacts -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-files/
+          ls -la release-files/
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-files/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
