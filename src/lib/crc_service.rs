@@ -1,5 +1,5 @@
 use crate::lib::hash::{evaluate_crc32, CrcResult};
-use crate::table_encryption_service::xor_str;
+use crate::table_encryption::table_encryption_service::xor_str;
 
 use anyhow::{anyhow, Context, Result};
 use crc32fast::Hasher;
@@ -147,7 +147,7 @@ pub fn manipulate_crc(original: &PathBuf, modified: &PathBuf) -> Result<bool> {
     let modified_data = fs::read(modified).with_context(|| format!("Error reading file '{:?}'", modified))?;
 
     let original_crc = evaluate_crc32(&original_data);
-    
+
     let mut modified_crc_hasher = Hasher::new();
     modified_crc_hasher.update(&modified_data);
     modified_crc_hasher.update(&[0, 0, 0, 0]);
@@ -167,13 +167,13 @@ pub fn manipulate_crc(original: &PathBuf, modified: &PathBuf) -> Result<bool> {
 
     let mut final_data = modified_data;
     final_data.extend_from_slice(&final_result);
-    
+
     let final_crc = evaluate_crc32(&final_data);
 
     let is_crc_match = final_crc.value == original_crc.value;
     if is_crc_match {
         save_bytes_to_file(&final_data, modified)?;
     }
-    
+
     Ok(is_crc_match)
 }

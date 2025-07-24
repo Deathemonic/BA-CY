@@ -1,4 +1,6 @@
-use anyhow::Result;
+use crate::error::BacyError;
+
+use std::fs;
 use crc32fast::Hasher;
 use md5::{Digest, Md5};
 use xxhash_rust::xxh32::Xxh32;
@@ -18,8 +20,8 @@ impl CrcResult {
     }
 }
 
-pub fn calculate_crc32(path: PathBuf) -> Result<u32> {
-    let data: Vec<u8> = std::fs::read(path)?;
+pub fn calculate_crc32(path: &PathBuf) -> Result<u32, BacyError> {
+    let data: Vec<u8> = fs::read(path)?;
     Ok(crc32fast::hash(&data))
 }
 
@@ -30,8 +32,8 @@ pub fn evaluate_crc32(data: &[u8]) -> CrcResult {
     CrcResult::new(crc_value)
 }
 
-pub fn calculate_md5(path: PathBuf) -> Result<String> {
-    let data: Vec<u8> = std::fs::read(path)?;
+pub fn calculate_md5(path: &PathBuf) -> Result<String, BacyError> {
+    let data: Vec<u8> = fs::read(path)?;
     let mut hasher = Md5::new();
     hasher.update(&data);
     let result = hasher.finalize();

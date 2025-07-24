@@ -1,12 +1,12 @@
 pub mod table_encryption_service {
     use crate::lib::hash::calculate_xxhash;
-    
+
     use anyhow::Result;
     use base64::{Engine, engine::general_purpose};
     use byteorder::{ByteOrder, LittleEndian};
     use rand_mt::Mt;
     use std::cmp::Ordering;
-    
+
     fn gen_int31(rng: &mut Mt) -> u32 {
         rng.next_u32() >> 1
     }
