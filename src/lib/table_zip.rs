@@ -18,7 +18,7 @@ impl TableZipFile {
         let mut rng = Mt::new(hash);
         let mut next_buf = [0u8; 15];
         next_bytes(&mut rng, &mut next_buf);
-        let password = general_purpose::STANDARD.encode(&next_buf);
+        let password = general_purpose::STANDARD.encode(next_buf);
         let archive = ZipArchive::new(Cursor::new(buf))?;
 
         Ok(Self { archive, password })
