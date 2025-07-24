@@ -1,4 +1,4 @@
-name: Build Multi-Language Bindings
+name: Build Bindings
 
 on:
   push:
