@@ -17,24 +17,24 @@ jobs:
             target: x86_64-unknown-linux-gnu
             platform: linux-x86_64
             lib_name: libbacy.so
-            languages: [python, kotlin, ruby]
+            languages: [python, kotlin, ruby, go, csharp]
           
           - os: macos-15
             target: x86_64-apple-darwin
             platform: macos-x86_64
             lib_name: libbacy.dylib
-            languages: [python, swift, ruby]
+            languages: [python, swift, ruby, go, csharp]
           - os: macos-15
             target: aarch64-apple-darwin
             platform: macos-arm64
             lib_name: libbacy.dylib
-            languages: [python, swift, ruby]
+            languages: [python, swift, ruby, go, csharp]
           
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             platform: windows-x64
             lib_name: bacy.dll
-            languages: [python, kotlin, ruby]
+            languages: [python, kotlin, ruby, go, csharp]
 
     runs-on: ${{ matrix.os }}
     
@@ -70,6 +70,28 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
+      
+      - name: Setup Go
+        if: contains(matrix.languages, 'go')
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Install Bindgen Go
+        if: contains(matrix.languages, 'go')
+        run: |
+          cargo install uniffi-bindgen-go --git https://github.com/NordSecurity/uniffi-bindgen-go --tag v0.4.0+v0.28.3
+      
+      - name: Setup .NET (for C#)
+        if: contains(matrix.languages, 'csharp')
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0'
+      
+      - name: Install Bindgen C#
+        if: contains(matrix.languages, 'csharp')
+        run: |
+          cargo install uniffi-bindgen-cs --git https://github.com/NordSecurity/uniffi-bindgen-cs --tag v0.9.1+v0.28.3
       
       - name: Cache Cargo
         uses: actions/cache@v3
@@ -115,97 +137,17 @@ jobs:
         run: |
           cargo run --bin bindgen generate src/bacy.udl --language ruby --out-dir bindings/ruby
       
-      - name: Create example files
-        shell: bash
+      - name: Generate Go bindings
+        if: contains(matrix.languages, 'go')
         run: |
-          mkdir -p examples
-          
-          # Python example
-          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " python " ]]; then
-            cat > examples/example.py << 'EOF'
-          import bacy
-          
-          # Test hash functions
-          print("Testing bacy hash functions...")
-          
-          # Test CRC32 calculation from file
-          try:
-              crc = bacy.calculate_crc32("README.md")
-              print(f"CRC32 of README.md: {crc}")
-          except Exception as e:
-              print(f"CRC32 error: {e}")
-          
-          # Test CRC32 evaluation from bytes
-          result = bacy.evaluate_crc32(b"hello world")
-          print(f"CRC32 of 'hello world': {result.value} (hex: {result.hex})")
-          
-          # Test xxHash calculation from bytes
-          xxhash = bacy.calculate_xxhash(b"hello world")
-          print(f"xxHash of 'hello world': {xxhash}")
-          
-          print("All tests completed!")
-          EOF
-          fi
-          
-          # Kotlin example
-          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " kotlin " ]]; then
-            cat > examples/Example.kt << 'EOF'
-          import bacy.*
-          
-          fun main() {
-              println("Testing bacy hash functions...")
-              
-              // Test CRC32 evaluation from bytes
-              val result = evaluateCrc32("hello world".toByteArray())
-              println("CRC32 of 'hello world': ${result.value} (hex: ${result.hex})")
-              
-              // Test xxHash calculation from bytes
-              val xxhash = calculateXxhash("hello world".toByteArray())
-              println("xxHash of 'hello world': $xxhash")
-              
-              println("All tests completed!")
-          }
-          EOF
-          fi
-          
-          # Swift example
-          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " swift " ]]; then
-            cat > examples/example.swift << 'EOF'
-          import Foundation
-          
-          print("Testing bacy hash functions...")
-          
-          // Test CRC32 evaluation from bytes
-          let data = "hello world".data(using: .utf8)!
-          let result = evaluateCrc32(data: Array(data))
-          print("CRC32 of 'hello world': \(result.value) (hex: \(result.hex))")
-          
-          // Test xxHash calculation from bytes
-          let xxhash = calculateXxhash(bytes: Array(data))
-          print("xxHash of 'hello world': \(xxhash)")
-          
-          print("All tests completed!")
-          EOF
-          fi
-          
-          # Ruby example
-          if [[ " ${{ join(matrix.languages, ' ') }} " =~ " ruby " ]]; then
-            cat > examples/example.rb << 'EOF'
-          require_relative '../bacy'
-          
-          puts "Testing bacy hash functions..."
-          
-          # Test CRC32 evaluation from bytes
-          result = Bacy.evaluate_crc32("hello world".bytes)
-          puts "CRC32 of 'hello world': #{result.value} (hex: #{result.hex})"
-          
-          # Test xxHash calculation from bytes
-          xxhash = Bacy.calculate_xxhash("hello world".bytes)
-          puts "xxHash of 'hello world': #{xxhash}"
-          
-          puts "All tests completed!"
-          EOF
-          fi
+          mkdir -p bindings/go
+          uniffi-bindgen-go src/bacy.udl --out-dir bindings/go
+      
+      - name: Generate C# bindings
+        if: contains(matrix.languages, 'csharp')
+        run: |
+          mkdir -p bindings/csharp
+          uniffi-bindgen-cs src/bacy.udl --out-dir bindings/csharp
       
       - name: Package releases
         shell: bash
@@ -230,39 +172,23 @@ jobs:
               cp -r bindings/${lang}/* "releases/${PACKAGE_NAME}/"
             fi
             
-            # Copy examples
-            if [[ "${lang}" == "python" && -f "examples/example.py" ]]; then
-              cp examples/example.py "releases/${PACKAGE_NAME}/"
-            elif [[ "${lang}" == "kotlin" && -f "examples/Example.kt" ]]; then
-              cp examples/Example.kt "releases/${PACKAGE_NAME}/"
-            elif [[ "${lang}" == "swift" && -f "examples/example.swift" ]]; then
-              cp examples/example.swift "releases/${PACKAGE_NAME}/"
-            elif [[ "${lang}" == "ruby" && -f "examples/example.rb" ]]; then
-              cp examples/example.rb "releases/${PACKAGE_NAME}/"
-            fi
-            
             # Create README
             cat > "releases/${PACKAGE_NAME}/README.md" << EOF
-          # Bacy ${VERSION} - ${lang^} Bindings for ${{ matrix.platform }}
+          # BA-CY ${VERSION} - ${lang^} Bindings for ${{ matrix.platform }}
           
           Pre-compiled ${lang^} bindings for the Bacy library.
           
-          ## Usage
-          
-          ### ${lang^}
-          \`\`\`${lang}
-          $(cat examples/example.${lang} 2>/dev/null || echo "See example.${lang} for usage")
-          \`\`\`
-          
           ## Files
-          - \`${lang}.${lang}\` - Generated bindings
-          - \`libuniffi_bacy.*\` - Native library
-          - \`example.${lang}\` - Usage example
+          - Generated ${lang^} bindings
+          - Native library (\`libuniffi_bacy.*\`)
           
           ## Platform
           - OS: ${{ runner.os }}
           - Architecture: ${{ matrix.platform }}
           - Target: ${{ matrix.target }}
+          
+          ## Usage
+          Import the generated bindings in your ${lang^} project and use the Bacy functions directly.
           EOF
             
             # Create archive
