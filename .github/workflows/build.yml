@@ -19,12 +19,12 @@ jobs:
             lib_name: libbacy.so
             languages: [python, kotlin, ruby]
           
-          - os: macos-latest
+          - os: macos-15
             target: x86_64-apple-darwin
             platform: macos-x86_64
             lib_name: libbacy.dylib
             languages: [python, swift, ruby]
-          - os: macos-latest
+          - os: macos-15
             target: aarch64-apple-darwin
             platform: macos-arm64
             lib_name: libbacy.dylib
@@ -276,7 +276,7 @@ jobs:
           done
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.platform }}
           path: releases/*
@@ -289,7 +289,7 @@ jobs:
     
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       
