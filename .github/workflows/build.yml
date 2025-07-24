@@ -172,14 +172,24 @@ jobs:
               cp -r bindings/${lang}/* "releases/${PACKAGE_NAME}/"
             fi
             
-            # Create README
+            # Create README (capitalize language name for compatibility)
+            case "${lang}" in
+              "python") LANG_NAME="Python" ;;
+              "kotlin") LANG_NAME="Kotlin" ;;
+              "swift") LANG_NAME="Swift" ;;
+              "ruby") LANG_NAME="Ruby" ;;
+              "go") LANG_NAME="Go" ;;
+              "csharp") LANG_NAME="C#" ;;
+              *) LANG_NAME="${lang}" ;;
+            esac
+            
             cat > "releases/${PACKAGE_NAME}/README.md" << EOF
-          # BA-CY ${VERSION} - ${lang^} Bindings for ${{ matrix.platform }}
+          # BA-CY ${VERSION} - ${LANG_NAME} Bindings for ${{ matrix.platform }}
           
-          Pre-compiled ${lang^} bindings for the Bacy library.
+          Pre-compiled ${LANG_NAME} bindings for the Bacy library.
           
           ## Files
-          - Generated ${lang^} bindings
+          - Generated ${LANG_NAME} bindings
           - Native library (\`libuniffi_bacy.*\`)
           
           ## Platform
@@ -188,7 +198,7 @@ jobs:
           - Target: ${{ matrix.target }}
           
           ## Usage
-          Import the generated bindings in your ${lang^} project and use the Bacy functions directly.
+          Import the generated bindings in your ${LANG_NAME} project and use the Bacy functions directly.
           EOF
             
             # Create archive
