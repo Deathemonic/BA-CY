@@ -1,0 +1,20 @@
+[bindings.python]
+cdylib_name = "bacy"
+
+[bindings.kotlin]
+cdylib_name = "bacy"
+package_name = "bacy"
+
+[bindings.swift]
+cdylib_name = "bacy"
+
+[bindings.ruby]
+cdylib_name = "bacy"
+
+[bindings.csharp]
+cdylib_name = "bacy"
+namespace = "BACY"
+
+[bindings.go]
+cdylib_name = "bacy"
+package_name = "bacy"

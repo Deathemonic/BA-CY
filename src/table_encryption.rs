@@ -1,10 +1,11 @@
 pub mod table_encryption_service {
+    use crate::hash::calculate_xxhash;
+
     use anyhow::Result;
     use base64::{Engine, engine::general_purpose};
     use byteorder::{ByteOrder, LittleEndian};
     use rand_mt::Mt;
-
-    use crate::lib::hash::calculate_xxhash;
+    use std::cmp::Ordering;
 
     fn gen_int31(rng: &mut Mt) -> u32 {
         rng.next_u32() >> 1
@@ -26,7 +27,7 @@ pub mod table_encryption_service {
     }
 
     pub fn next_bytes(rng: &mut Mt, buf: &mut [u8]) {
-        let len: usize = (buf.len() + 3) / 4;
+        let len: usize = buf.len().div_ceil(4);
         for i in 0..len {
             let num: u32 = gen_int31(rng);
             let offset: usize = i * 4;
@@ -38,15 +39,15 @@ pub mod table_encryption_service {
         }
     }
 
-    fn strxor(value: &[u8], key: &[u8]) -> Vec<u8> {
+    pub fn xor_str(value: &[u8], key: &[u8]) -> Vec<u8> {
         value.iter().zip(key.iter()).map(|(a, b)| a ^ b).collect()
     }
 
     fn xor_with_key(value: &mut [u8], key: &[u8]) -> Vec<u8> {
         match value.len().cmp(&key.len()) {
-            std::cmp::Ordering::Equal => strxor(value, key),
-            std::cmp::Ordering::Less => strxor(value, &key[..value.len()]),
-            std::cmp::Ordering::Greater => {
+            Ordering::Equal => xor_str(value, key),
+            Ordering::Less => xor_str(value, &key[..value.len()]),
+            Ordering::Greater => {
                 let mut result: Vec<u8> = Vec::with_capacity(value.len());
                 let key_len: usize = key.len();
                 let full_chunks: usize = value.len() / key_len;
@@ -55,12 +56,12 @@ pub mod table_encryption_service {
                 for i in 0..full_chunks {
                     let start: usize = i * key_len;
                     let end: usize = start + key_len;
-                    result.extend(strxor(&value[start..end], key));
+                    result.extend(xor_str(&value[start..end], key));
                 }
 
                 if remainder > 0 {
                     let start: usize = full_chunks * key_len;
-                    result.extend(strxor(&value[start..], &key[..remainder]));
+                    result.extend(xor_str(&value[start..], &key[..remainder]));
                 }
 
                 result
@@ -69,7 +70,7 @@ pub mod table_encryption_service {
     }
 
     pub fn xor(name: &str, data: &[u8]) -> Vec<u8> {
-        let seed: u32 = calculate_xxhash(name.as_bytes());
+        let seed: u32 = calculate_xxhash(name.as_bytes(), false, false) as u32;
         let mut rng: Mt = Mt::new(seed);
         let mut key: Vec<u8> = vec![0u8; data.len()];
         next_bytes(&mut rng, &mut key);
@@ -157,7 +158,7 @@ pub mod table_encryption_service {
     }
 
     pub fn create_key(bytes: &[u8]) -> [u8; 8] {
-        let seed: u32 = calculate_xxhash(bytes);
+        let seed: u32 = calculate_xxhash(bytes, false, false) as u32;
         let mut rng: Mt = Mt::new(seed);
         let mut buf: [u8; 8] = [0u8; 8];
         next_bytes(&mut rng, &mut buf);

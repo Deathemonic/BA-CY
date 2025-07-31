@@ -1,4 +1,4 @@
-# Blue Archive Cyptography
+# Blue Archive - Cyptography
 
 A library for handling **Blue Archive** catalog and table operations, serialization/deserialization, encryption, and hashing.
 

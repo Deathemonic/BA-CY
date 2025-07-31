@@ -1,5 +1,5 @@
-use crate::lib::hash::calculate_xxhash;
-use crate::lib::table_encryption::table_encryption_service::next_bytes;
+use crate::hash::calculate_xxhash;
+use crate::table_encryption::table_encryption_service::next_bytes;
 
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose};
@@ -14,11 +14,11 @@ pub struct TableZipFile {
 
 impl TableZipFile {
     pub fn new<S: AsRef<str>>(buf: Vec<u8>, filename: S) -> Result<Self> {
-        let hash = calculate_xxhash(filename.as_ref().as_bytes());
+        let hash = calculate_xxhash(filename.as_ref().as_bytes(), false, false) as u32;
         let mut rng = Mt::new(hash);
         let mut next_buf = [0u8; 15];
         next_bytes(&mut rng, &mut next_buf);
-        let password = general_purpose::STANDARD.encode(&next_buf);
+        let password = general_purpose::STANDARD.encode(next_buf);
         let archive = ZipArchive::new(Cursor::new(buf))?;
 
         Ok(Self { archive, password })

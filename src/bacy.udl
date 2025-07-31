@@ -1,0 +1,101 @@
+[Error]
+enum Error {
+  "Generic",
+};
+
+namespace bacy {
+  [Throws=Error]
+  u32 calculate_crc32(string path);
+  
+  CrcResult evaluate_crc32(bytes data);
+  
+  [Throws=Error]
+  string calculate_md5(string path);
+  
+  u64 calculate_xxhash(bytes data, boolean bit64, boolean endian);
+  
+  [Throws=Error]
+  string encrypt_name(string filename, i64 crc);
+  
+  [Throws=Error]
+  MediaCatalog deserialize_media_catalog(bytes data, string base_url);
+  
+  [Throws=Error]
+  TableCatalog deserialize_table_catalog(bytes data, string base_url);
+  
+  [Throws=Error]
+  string media_catalog_to_json(MediaCatalog catalog);
+  
+  [Throws=Error]
+  string table_catalog_to_json(TableCatalog catalog);
+  
+  bytes xor_str(bytes value, bytes key);
+  bytes xor_data(string name, bytes data);
+  bytes xor_bytes(bytes value, bytes key);
+  i32 xor_int32(i32 value, bytes key);
+  i64 xor_int64(i64 value, bytes key);
+  u32 xor_uint32(u32 value, bytes key);
+  u64 xor_uint64(u64 value, bytes key);
+  i32 convert_int(i32 value, bytes key);
+  i64 convert_long(i64 value, bytes key);
+  u32 convert_uint(u32 value, bytes key);
+  u64 convert_ulong(u64 value, bytes key);
+  f32 convert_float(f32 value, bytes key);
+  f64 convert_double(f64 value, bytes key);
+  f32 encrypt_float(f32 value, bytes key);
+  f64 encrypt_double(f64 value, bytes key);
+  bytes create_key(bytes data);
+  
+  [Throws=Error]
+  string convert_string(string value, bytes key);
+  
+  [Throws=Error]
+  string encrypt_string(string value, bytes key);
+  
+  [Throws=Error]
+  bytes extract_zip_file(bytes zip_data, string filename, string file_to_extract);
+  
+  [Throws=Error]
+  sequence<ZipFileEntry> extract_all_zip_files(bytes zip_data, string filename);
+};
+
+dictionary CrcResult {
+  u32 value;
+  string hex;
+};
+
+dictionary Media {
+  string path;
+  string file_name;
+  i64 bytes;
+  i64 crc;
+  boolean is_prologue;
+  boolean is_split_download;
+  i32 media_type;
+};
+
+dictionary Table {
+  string name;
+  i64 size;
+  i64 crc;
+  boolean is_in_build;
+  boolean is_changed;
+  boolean is_prologue;
+  boolean is_split_download;
+  sequence<string> includes;
+};
+
+dictionary MediaCatalog {
+  record<string, Media> table;
+  string base_url;
+};
+
+dictionary TableCatalog {
+  record<string, Table> table;
+  string base_url;
+};
+
+dictionary ZipFileEntry {
+  string name;
+  bytes data;
+};
