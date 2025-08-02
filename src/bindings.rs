@@ -178,11 +178,11 @@ pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<
 }
 
 pub fn use_encryption() -> bool {
-    crate::table_encryption::use_encryption()
+    crate::table_encryption::table_encryption_service::use_encryption()
 }
 
 pub fn set_use_encryption(enabled: bool) {
-    crate::table_encryption::set_use_encryption(enabled)
+    crate::table_encryption::table_encryption_service::set_use_encryption(enabled)
 }
 
 #[derive(Debug, Clone)]
