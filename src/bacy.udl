@@ -57,6 +57,9 @@ namespace bacy {
   
   [Throws=Error]
   sequence<ZipFileEntry> extract_all_zip_files(bytes zip_data, string filename);
+  
+  boolean use_encryption();
+  void set_use_encryption(boolean enabled);
 };
 
 dictionary CrcResult {

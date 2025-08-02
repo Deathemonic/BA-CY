@@ -177,6 +177,14 @@ pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<
     Ok(files.into_iter().map(|(name, data)| ZipFileEntry { name, data }).collect())
 }
 
+pub fn use_encryption() -> bool {
+    crate::table_encryption::use_encryption()
+}
+
+pub fn set_use_encryption(enabled: bool) {
+    crate::table_encryption::set_use_encryption(enabled)
+}
+
 #[derive(Debug, Clone)]
 pub struct ZipFileEntry {
     pub name: String,

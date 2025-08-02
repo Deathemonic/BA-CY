@@ -2,10 +2,22 @@ pub mod table_encryption_service {
     use crate::hash::calculate_xxhash;
 
     use anyhow::Result;
-    use base64::{Engine, engine::general_purpose};
+    use base64::{engine::general_purpose, Engine};
     use byteorder::{ByteOrder, LittleEndian};
+    use once_cell::sync::Lazy;
+    use parking_lot::RwLock;
     use rand_mt::Mt;
     use std::cmp::Ordering;
+
+    static USE_ENCRYPTION: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
+    
+    pub fn use_encryption() -> bool {
+        *USE_ENCRYPTION.read()
+    }
+    
+    pub fn set_use_encryption(enabled: bool) {
+        *USE_ENCRYPTION.write() = enabled;
+    }
 
     fn gen_int31(rng: &mut Mt) -> u32 {
         rng.next_u32() >> 1
