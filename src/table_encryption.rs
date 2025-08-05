@@ -137,13 +137,14 @@ pub mod table_encryption_service {
         if value != 0 { xor_uint64(value, key) } else { 0 }
     }
 
-    pub fn convert_enum<T>(value: T, key: &[u8]) -> T
-    where
-        T: Copy + flatbuffers::EndianScalar<Scalar = i32>
+    pub fn convert_enum<T>(value: T, key: &[u8]) -> T 
+    where 
+        T: Copy + flatbuffers::EndianScalar,
+        T::Scalar: Into<i32> + From<i32> + Copy
     {
-        let scalar_val = value.to_little_endian();
+        let scalar_val: i32 = value.to_little_endian().into();
         let converted = if scalar_val != 0 { convert_int(scalar_val, key) } else { 0 };
-        T::from_little_endian(converted)
+        T::from_little_endian(T::Scalar::from(converted))
     }
 
     pub fn convert_float(value: f32, key: &[u8]) -> f32 {
