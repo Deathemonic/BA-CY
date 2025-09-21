@@ -16,7 +16,7 @@
 
 use crate::hash::CrcResult;
 use crate::catalog::{Media, Table};
-use anyhow::Result;
+use crate::error::{HashError, CatalogError, TableEncryptionError, TableZipError};
 
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -27,8 +27,26 @@ pub enum Error {
     Generic(String),
 }
 
-impl From<anyhow::Error> for Error {
-    fn from(err: anyhow::Error) -> Self {
+impl From<HashError> for Error {
+    fn from(err: HashError) -> Self {
+        Error::Generic(err.to_string())
+    }
+}
+
+impl From<CatalogError> for Error {
+    fn from(err: CatalogError) -> Self {
+        Error::Generic(err.to_string())
+    }
+}
+
+impl From<TableEncryptionError> for Error {
+    fn from(err: TableEncryptionError) -> Self {
+        Error::Generic(err.to_string())
+    }
+}
+
+impl From<TableZipError> for Error {
+    fn from(err: TableZipError) -> Self {
         Error::Generic(err.to_string())
     }
 }
@@ -47,7 +65,7 @@ pub struct TableCatalog {
 
 pub fn calculate_crc32(path: String) -> Result<u32, Error> {
     let path_buf = PathBuf::from(path);
-    crate::hash::calculate_crc32(&path_buf).map_err(Error::from)
+    Ok(crate::hash::calculate_crc32(&path_buf)?)
 }
 
 pub fn evaluate_crc32(data: Vec<u8>) -> CrcResult {
@@ -56,7 +74,7 @@ pub fn evaluate_crc32(data: Vec<u8>) -> CrcResult {
 
 pub fn calculate_md5(path: String) -> Result<String, Error> {
     let path_buf = PathBuf::from(path);
-    crate::hash::calculate_md5(&path_buf).map_err(Error::from)
+    Ok(crate::hash::calculate_md5(&path_buf)?)
 }
 
 pub fn calculate_xxhash(bytes: Vec<u8>, bit64: bool, endian: bool) -> u64 {
@@ -64,11 +82,11 @@ pub fn calculate_xxhash(bytes: Vec<u8>, bit64: bool, endian: bool) -> u64 {
 }
 
 pub fn encrypt_name(filename: String, crc: i64) -> Result<String, Error> {
-    crate::hash::encrypt_name(&filename, crc).map_err(Error::from)
+    Ok(crate::hash::encrypt_name(&filename, crc)?)
 }
 
 pub fn deserialize_media_catalog(bytes: Vec<u8>, base_url: String) -> Result<MediaCatalog, Error> {
-    let catalog = crate::catalog::MediaCatalog::deserialize(&bytes, &base_url).map_err(Error::from)?;
+    let catalog = crate::catalog::MediaCatalog::deserialize(&bytes, &base_url)?;
     Ok(MediaCatalog {
         table: catalog.get_table().clone(),
         base_url: catalog.get_base_url().to_string(),
@@ -76,7 +94,7 @@ pub fn deserialize_media_catalog(bytes: Vec<u8>, base_url: String) -> Result<Med
 }
 
 pub fn deserialize_table_catalog(bytes: Vec<u8>, base_url: String) -> Result<TableCatalog, Error> {
-    let catalog = crate::catalog::TableCatalog::deserialize(&bytes, &base_url).map_err(Error::from)?;
+    let catalog = crate::catalog::TableCatalog::deserialize(&bytes, &base_url)?;
     Ok(TableCatalog {
         table: catalog.get_table().clone(),
         base_url: catalog.get_base_url().to_string(),
@@ -85,12 +103,12 @@ pub fn deserialize_table_catalog(bytes: Vec<u8>, base_url: String) -> Result<Tab
 
 pub fn media_catalog_to_json(wrapper: MediaCatalog) -> Result<String, Error> {
     let catalog = crate::catalog::MediaCatalog::new(wrapper.table, &wrapper.base_url);
-    catalog.to_json().map_err(Error::from)
+    Ok(catalog.to_json()?)
 }
 
 pub fn table_catalog_to_json(wrapper: TableCatalog) -> Result<String, Error> {
     let catalog = crate::catalog::TableCatalog::new(wrapper.table, &wrapper.base_url);
-    catalog.to_json().map_err(Error::from)
+    Ok(catalog.to_json()?)
 }
 
 pub fn xor_str(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
@@ -158,21 +176,21 @@ pub fn create_key(bytes: Vec<u8>) -> Vec<u8> {
 }
 
 pub fn convert_string(value: String, key: Vec<u8>) -> Result<String, Error> {
-    crate::table_encryption::table_encryption_service::convert_string(&value, &key).map_err(Error::from)
+    Ok(crate::table_encryption::table_encryption_service::convert_string(&value, &key)?)
 }
 
 pub fn encrypt_string(value: String, key: Vec<u8>) -> Result<String, Error> {
-    crate::table_encryption::table_encryption_service::new_encrypt_string(&value, &key).map_err(Error::from)
+    Ok(crate::table_encryption::table_encryption_service::new_encrypt_string(&value, &key)?)
 }
 
 pub fn extract_zip_file(zip_data: Vec<u8>, filename: String, file_to_extract: String) -> Result<Vec<u8>, Error> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename).map_err(Error::from)?;
-    zip_file.get_by_name(file_to_extract).map_err(Error::from)
+    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename)?;
+    Ok(zip_file.get_by_name(file_to_extract)?)
 }
 
 pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<ZipFileEntry>, Error> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename).map_err(Error::from)?;
-    let files = zip_file.extract_all().map_err(Error::from)?;
+    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename)?;
+    let files = zip_file.extract_all()?;
     
     Ok(files.into_iter().map(|(name, data)| ZipFileEntry { name, data }).collect())
 }

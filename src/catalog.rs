@@ -1,5 +1,5 @@
 use super::memorypack;
-use anyhow::{Context, Result};
+use crate::error::CatalogError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -81,12 +81,12 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Clone> Catalog<T> {
         }
     }
 
-    pub fn to_json(&self) -> Result<String> {
-        serde_json::to_string_pretty(self).context("Failed to serialize catalog to JSON")
+    pub fn to_json(&self) -> Result<String, CatalogError> {
+        serde_json::to_string_pretty(self).map_err(|_| CatalogError::SerializationFailed)
     }
 
-    pub fn from_json(json_data: &str, base_url: &str) -> Result<Self> {
-        let mut catalog: Self = serde_json::from_str(json_data).context("Failed to parse catalog from JSON")?;
+    pub fn from_json(json_data: &str, base_url: &str) -> Result<Self, CatalogError> {
+        let mut catalog: Self = serde_json::from_str(json_data).map_err(|_| CatalogError::DeserializationFailed)?;
         catalog.base_url = base_url.to_string();
         Ok(catalog)
     }
@@ -103,36 +103,35 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Clone> Catalog<T> {
 pub type MediaCatalog = Catalog<Media>;
 pub type TableCatalog = Catalog<Table>;
 
-fn deserialize_catalog<T, F>(bytes: &[u8], base_url: &str, reader_fn: F, context_msg: &'static str) -> Result<Catalog<T>>
+fn deserialize_catalog<T, F>(bytes: &[u8], base_url: &str, reader_fn: F) -> Result<Catalog<T>, CatalogError>
 where
     T: Serialize + for<'de> Deserialize<'de> + Clone,
-    F: Fn(&mut Cursor<&[u8]>) -> Result<(String, T)>,
+    F: Fn(&mut Cursor<&[u8]>) -> Result<(String, T), CatalogError>,
 {
     let mut cursor: Cursor<&[u8]> = Cursor::new(bytes);
-    let _ = memorypack::read_i8(&mut cursor);
+    let _ = memorypack::read_i8(&mut cursor)?;
 
     let table_size: i32 = memorypack::read_i32(&mut cursor)?;
     let table: HashMap<String, T> = (0..table_size)
         .map(|_| reader_fn(&mut cursor))
-        .collect::<Result<HashMap<String, T>>>()
-        .with_context(|| context_msg)?;
+        .collect::<Result<HashMap<String, T>, CatalogError>>()?;
 
     Ok(Catalog::new(table, base_url))
 }
 
 impl MediaCatalog {
-    pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self> {
-        deserialize_catalog(bytes, base_url, read_media, "Failed to read media")
+    pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self, CatalogError> {
+        deserialize_catalog(bytes, base_url, read_media)
     }
 }
 
 impl TableCatalog {
-    pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self> {
-        deserialize_catalog(bytes, base_url, read_table, "Failed to read table")
+    pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self, CatalogError> {
+        deserialize_catalog(bytes, base_url, read_table)
     }
 }
 
-fn read_media(cursor: &mut Cursor<&[u8]>) -> Result<(String, Media)> {
+fn read_media(cursor: &mut Cursor<&[u8]>) -> Result<(String, Media), CatalogError> {
     let _ = memorypack::read_i32(cursor);
     let key: String = memorypack::read_string(cursor)?;
     let _ = memorypack::read_i8(cursor);
@@ -161,7 +160,7 @@ fn read_media(cursor: &mut Cursor<&[u8]>) -> Result<(String, Media)> {
     ))
 }
 
-fn read_table(cursor: &mut Cursor<&[u8]>) -> Result<(String, Table)> {
+fn read_table(cursor: &mut Cursor<&[u8]>) -> Result<(String, Table), CatalogError> {
     let _ = memorypack::read_i32(cursor);
     let key: String = memorypack::read_string(cursor)?;
     let _ = memorypack::read_i8(cursor);
@@ -192,7 +191,7 @@ fn read_table(cursor: &mut Cursor<&[u8]>) -> Result<(String, Table)> {
     ))
 }
 
-fn read_includes(cursor: &mut Cursor<&[u8]>) -> Result<Vec<String>> {
+fn read_includes(cursor: &mut Cursor<&[u8]>) -> Result<Vec<String>, CatalogError> {
     let size: i32 = memorypack::read_i32(cursor)?;
     if size == -1 {
         return Ok(vec![]);
@@ -200,13 +199,13 @@ fn read_includes(cursor: &mut Cursor<&[u8]>) -> Result<Vec<String>> {
 
     let _ = memorypack::read_i32(cursor);
 
-    Ok((0..size)
+    (0..size)
         .map(|i| {
-            let s: String = memorypack::read_string(cursor).unwrap();
+            let s: String = memorypack::read_string(cursor)?;
             if i != size - 1 {
-                let _ = memorypack::read_i32(cursor);
+                let _ = memorypack::read_i32(cursor)?;
             }
-            s
+            Ok(s)
         })
-        .collect())
+        .collect::<Result<Vec<String>, CatalogError>>()
 }

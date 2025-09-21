@@ -1,7 +1,7 @@
 pub mod table_encryption_service {
     use crate::hash::calculate_xxhash;
+    use crate::error::TableEncryptionError;
 
-    use anyhow::Result;
     use base64::{engine::general_purpose, Engine};
     use byteorder::{ByteOrder, LittleEndian};
     use once_cell::sync::Lazy;
@@ -187,7 +187,7 @@ pub mod table_encryption_service {
         buf
     }
 
-    pub fn convert_string(value: &str, key: &[u8]) -> Result<String> {
+    pub fn convert_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
         let mut raw: Vec<u8> = general_purpose::STANDARD.decode(value.as_bytes())?;
         let bytes: Vec<u8> = xor_with_key(&mut raw, key);
         let utf16_bytes: Vec<u16> = bytes.chunks_exact(2).map(|x| u16::from_le_bytes([x[0], x[1]])).collect::<Vec<u16>>();
@@ -197,7 +197,7 @@ pub mod table_encryption_service {
         }
     }
 
-    pub fn new_encrypt_string(value: &str, key: &[u8]) -> Result<String> {
+    pub fn new_encrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
         if value.is_empty() || value.len() < 8 {
             return Ok(value.to_string());
         }

@@ -1,6 +1,6 @@
 [package]
 name = "bacy"
-version = "2.3.1"
+version = "2.4.0"
 edition = "2024"
 
 [[bin]]
@@ -13,7 +13,6 @@ name = "bacy"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.98"
 base64 = "0.22.1"
 byteorder = "1.5.0"
 crc32fast = "1.5.0"
@@ -27,7 +26,7 @@ serde_json = "1.0.142"
 thiserror = "2.0"
 uniffi = { version = "0.29.4", features = ["cli"] }
 xxhash-rust = { version = "0.8.15", features = ["xxh32", "xxh64"] }
-zip = { version = "4.3.0", features = ["aes-crypto", "deflate"] }
+zip = { version = "5.1.1", features = ["aes-crypto", "deflate"] }
 
 [build-dependencies]
 uniffi = { version = "0.29.4", features = [ "build" ] }

@@ -1,8 +1,8 @@
+use crate::error::TableZipError;
 use crate::hash::calculate_xxhash;
 use crate::table_encryption::table_encryption_service::next_bytes;
 
-use anyhow::Result;
-use base64::{Engine, engine::general_purpose};
+use base64::{engine::general_purpose, Engine};
 use rand_mt::Mt;
 use std::io::{Cursor, Read};
 use zip::ZipArchive;
@@ -13,7 +13,7 @@ pub struct TableZipFile {
 }
 
 impl TableZipFile {
-    pub fn new<S: AsRef<str>>(buf: Vec<u8>, filename: S) -> Result<Self> {
+    pub fn new<S: AsRef<str>>(buf: Vec<u8>, filename: S) -> Result<Self, TableZipError> {
         let hash = calculate_xxhash(filename.as_ref().as_bytes(), false, false) as u32;
         let mut rng = Mt::new(hash);
         let mut next_buf = [0u8; 15];
@@ -24,7 +24,7 @@ impl TableZipFile {
         Ok(Self { archive, password })
     }
 
-    pub fn get_by_name<S: AsRef<str>>(&mut self, name: S) -> Result<Vec<u8>> {
+    pub fn get_by_name<S: AsRef<str>>(&mut self, name: S) -> Result<Vec<u8>, TableZipError> {
         let mut file = self
             .archive
             .by_name_decrypt(name.as_ref(), self.password.as_bytes())?;
@@ -33,7 +33,7 @@ impl TableZipFile {
         Ok(buf)
     }
 
-    pub fn extract_all(&mut self) -> Result<Vec<(String, Vec<u8>)>> {
+    pub fn extract_all(&mut self) -> Result<Vec<(String, Vec<u8>)>, TableZipError> {
         let mut files = Vec::new();
         for i in 0..self.archive.len() {
             let mut file = self.archive.by_index_decrypt(i, self.password.as_bytes())?;
