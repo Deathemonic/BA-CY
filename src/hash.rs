@@ -21,7 +21,7 @@ impl CrcResult {
 }
 
 pub fn calculate_crc32(path: &Path) -> Result<u32, HashError> {
-    let data: Vec<u8> = fs::read(path)?;
+    let data = fs::read(path)?;
     Ok(crc32fast::hash(&data))
 }
 
@@ -33,7 +33,7 @@ pub fn evaluate_crc32(data: &[u8]) -> CrcResult {
 }
 
 pub fn calculate_md5(path: &Path) -> Result<String, HashError> {
-    let data: Vec<u8> = fs::read(path)?;
+    let data = fs::read(path)?;
     let mut hasher = Md5::new();
     hasher.update(&data);
     let result = hasher.finalize();

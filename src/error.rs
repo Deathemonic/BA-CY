@@ -22,6 +22,9 @@ pub enum TableZipError {
 
     #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
+
+    #[error(transparent)]
+    EncodeSlice(#[from] base64::EncodeSliceError)
 }
 
 #[derive(Error, Debug)]

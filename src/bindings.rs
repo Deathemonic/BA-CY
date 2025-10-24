@@ -184,14 +184,14 @@ pub fn encrypt_string(value: String, key: Vec<u8>) -> Result<String, Error> {
 }
 
 pub fn extract_zip_file(zip_data: Vec<u8>, filename: String, file_to_extract: String) -> Result<Vec<u8>, Error> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename)?;
-    Ok(zip_file.get_by_name(file_to_extract)?)
+    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
+    Ok(zip_file.get_by_name(&file_to_extract)?)
 }
 
 pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<ZipFileEntry>, Error> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename)?;
+    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
     let files = zip_file.extract_all()?;
-    
+
     Ok(files.into_iter().map(|(name, data)| ZipFileEntry { name, data }).collect())
 }
 
