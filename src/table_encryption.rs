@@ -1,208 +1,196 @@
-pub mod table_encryption_service {
-    use crate::hash::calculate_xxhash;
-    use crate::error::TableEncryptionError;
+use crate::error::TableEncryptionError;
+use crate::hash::calculate_xxhash;
 
-    use base64::{engine::general_purpose, Engine};
-    use byteorder::{ByteOrder, LittleEndian};
-    use once_cell::sync::Lazy;
-    use parking_lot::RwLock;
-    use rand_mt::Mt;
-    use std::cmp::Ordering;
+use base64::{engine::general_purpose, Engine};
+use once_cell::sync::Lazy;
+use parking_lot::RwLock;
+use rand_mt::Mt;
 
-    static USE_ENCRYPTION: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
-    
-    pub fn use_encryption() -> bool {
-        *USE_ENCRYPTION.read()
-    }
-    
-    pub fn set_use_encryption(enabled: bool) {
-        *USE_ENCRYPTION.write() = enabled;
-    }
+static USE_ENCRYPTION: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
 
-    fn gen_int31(rng: &mut Mt) -> u32 {
-        rng.next_u32() >> 1
-    }
+pub fn use_encryption() -> bool {
+    *USE_ENCRYPTION.read()
+}
 
-    fn calculate_modulus(key: &[u8]) -> i32 {
-        if key.is_empty() {
-            return 1;
-        }
+pub fn set_use_encryption(enabled: bool) {
+    *USE_ENCRYPTION.write() = enabled;
+}
 
-        let mut modulus: i32 = (key[0] % 10) as i32;
-        if modulus <= 1 {
-            modulus = 7;
-        }
-        if key[0] & 1 != 0 {
-            modulus = -modulus;
-        }
-        modulus
+fn gen_int31(rng: &mut Mt) -> u32 {
+    rng.next_u32() >> 1
+}
+
+fn calculate_modulus(key: &[u8]) -> i32 {
+    if key.is_empty() {
+        return 1;
     }
 
-    pub fn next_bytes(rng: &mut Mt, buf: &mut [u8]) {
-        let len: usize = buf.len().div_ceil(4);
-        for i in 0..len {
-            let num: u32 = gen_int31(rng);
-            let offset: usize = i * 4;
-            let end: usize = (offset + 4).min(buf.len());
-            let chunk: &mut [u8] = &mut buf[offset..end];
-            for (j, x) in chunk.iter_mut().enumerate() {
-                *x = ((num >> (j * 8)) & 0xFF) as u8;
-            }
-        }
+    let mut modulus: i32 = (key[0] % 10) as i32;
+    if modulus <= 1 {
+        modulus = 7;
+    }
+    if key[0] & 1 != 0 {
+        modulus = -modulus;
+    }
+    modulus
+}
+
+pub fn next_bytes(rng: &mut Mt, buf: &mut [u8]) {
+    let (chunks, remainder) = buf.as_chunks_mut::<4>();
+
+    for chunk in chunks {
+        let num = gen_int31(rng);
+        *chunk = num.to_le_bytes();
     }
 
-    pub fn xor_str(value: &[u8], key: &[u8]) -> Vec<u8> {
-        value.iter().zip(key.iter()).map(|(a, b)| a ^ b).collect()
+    if !remainder.is_empty() {
+        let num = gen_int31(rng);
+        remainder.copy_from_slice(&num.to_le_bytes()[..remainder.len()]);
     }
+}
 
-    fn xor_with_key(value: &mut [u8], key: &[u8]) -> Vec<u8> {
-        match value.len().cmp(&key.len()) {
-            Ordering::Equal => xor_str(value, key),
-            Ordering::Less => xor_str(value, &key[..value.len()]),
-            Ordering::Greater => {
-                let mut result: Vec<u8> = Vec::with_capacity(value.len());
-                let key_len: usize = key.len();
-                let full_chunks: usize = value.len() / key_len;
-                let remainder: usize = value.len() % key_len;
+pub fn xor_str(value: &[u8], key: &[u8]) -> Vec<u8> {
+    value.iter().zip(key.iter()).map(|(a, b)| a ^ b).collect()
+}
 
-                for i in 0..full_chunks {
-                    let start: usize = i * key_len;
-                    let end: usize = start + key_len;
-                    result.extend(xor_str(&value[start..end], key));
-                }
+pub fn xor_bytes(value: &[u8], key: &[u8]) -> Vec<u8> {
+    value
+        .iter()
+        .zip(key.iter().cycle())
+        .map(|(v, k)| v ^ k)
+        .collect()
+}
 
-                if remainder > 0 {
-                    let start: usize = full_chunks * key_len;
-                    result.extend(xor_str(&value[start..], &key[..remainder]));
-                }
+pub fn xor_inplace(data: &mut [u8], key: &[u8]) {
+    data.iter_mut()
+        .zip(key.iter().cycle())
+        .for_each(|(d, k)| *d ^= k);
+}
 
-                result
-            }
-        }
+pub fn xor(name: &str, data: &[u8]) -> Vec<u8> {
+    let seed = calculate_xxhash(name.as_bytes(), false, false) as u32;
+    let mut rng = Mt::new(seed);
+    let mut result = vec![0u8; data.len()];
+    next_bytes(&mut rng, &mut result);
+    xor_inplace(&mut result, data);
+    result
+}
+
+pub fn xor_int32(value: i32, key: &[u8]) -> i32 {
+    let mut bytes = value.to_le_bytes();
+    xor_inplace(&mut bytes, key);
+    i32::from_le_bytes(bytes)
+}
+
+pub fn xor_int64(value: i64, key: &[u8]) -> i64 {
+    let mut bytes = value.to_le_bytes();
+    xor_inplace(&mut bytes, key);
+    i64::from_le_bytes(bytes)
+}
+
+pub fn xor_uint32(value: u32, key: &[u8]) -> u32 {
+    let mut bytes = value.to_le_bytes();
+    xor_inplace(&mut bytes, key);
+    u32::from_le_bytes(bytes)
+}
+
+pub fn xor_uint64(value: u64, key: &[u8]) -> u64 {
+    let mut bytes = value.to_le_bytes();
+    xor_inplace(&mut bytes, key);
+    u64::from_le_bytes(bytes)
+}
+
+pub fn convert_int(value: i32, key: &[u8]) -> i32 {
+    if value != 0 { xor_int32(value, key) } else { 0 }
+}
+
+pub fn convert_long(value: i64, key: &[u8]) -> i64 {
+    if value != 0 { xor_int64(value, key) } else { 0 }
+}
+
+pub fn convert_uint(value: u32, key: &[u8]) -> u32 {
+    if value != 0 { xor_uint32(value, key) } else { 0 }
+}
+
+pub fn convert_ulong(value: u64, key: &[u8]) -> u64 {
+    if value != 0 { xor_uint64(value, key) } else { 0 }
+}
+
+pub fn convert_enum<T>(value: T, key: &[u8]) -> T
+where
+    T: Copy + flatbuffers::EndianScalar,
+    T::Scalar: Into<i32> + From<i32> + Copy,
+{
+    let scalar_val: i32 = value.to_little_endian().into();
+    let converted = if scalar_val != 0 { convert_int(scalar_val, key) } else { 0 };
+    T::from_little_endian(T::Scalar::from(converted))
+}
+
+fn apply_modulus<F>(value: F, key: &[u8], op: impl FnOnce(F, i32) -> F) -> F
+where
+    F: PartialEq + From<f32>,
+{
+    if value == F::from(0.0) {
+        return value;
     }
-
-    pub fn xor(name: &str, data: &[u8]) -> Vec<u8> {
-        let seed: u32 = calculate_xxhash(name.as_bytes(), false, false) as u32;
-        let mut rng: Mt = Mt::new(seed);
-        let mut key: Vec<u8> = vec![0u8; data.len()];
-        next_bytes(&mut rng, &mut key);
-        xor_with_key(&mut key, data)
+    let modulus = calculate_modulus(key);
+    if modulus == 1 {
+        return value;
     }
+    op(value, modulus)
+}
 
-    pub fn xor_bytes(value: &[u8], key: &[u8]) -> Vec<u8> {
-        value.iter().zip(key.iter().cycle()).map(|(v, k)| v ^ k).collect()
-    }
+pub fn convert_float(value: f32, key: &[u8]) -> f32 {
+    apply_modulus(value, key, |v, m| v / (m as f32 * 10000.0))
+}
 
-    pub fn xor_int32(value: i32, key: &[u8]) -> i32 {
-        let mut bytes: [u8; 4] = [0u8; 4];
-        LittleEndian::write_i32(&mut bytes, value);
-        let xored_bytes: Vec<u8> = xor_bytes(&bytes, key);
-        LittleEndian::read_i32(&xored_bytes)
-    }
+pub fn convert_double(value: f64, key: &[u8]) -> f64 {
+    apply_modulus(value, key, |v, m| v / (m as f64 * 10000.0))
+}
 
-    pub fn xor_int64(value: i64, key: &[u8]) -> i64 {
-        let mut bytes: [u8; 8] = [0u8; 8];
-        LittleEndian::write_i64(&mut bytes, value);
-        let xored_bytes: Vec<u8> = xor_bytes(&bytes, key);
-        LittleEndian::read_i64(&xored_bytes)
-    }
+pub fn encrypt_float(value: f32, key: &[u8]) -> f32 {
+    apply_modulus(value, key, |v, m| v * (m as f32 * 10000.0))
+}
 
-    pub fn xor_uint32(value: u32, key: &[u8]) -> u32 {
-        let mut bytes: [u8; 4] = [0u8; 4];
-        LittleEndian::write_u32(&mut bytes, value);
-        let xored_bytes: Vec<u8> = xor_bytes(&bytes, key);
-        LittleEndian::read_u32(&xored_bytes)
-    }
+pub fn encrypt_double(value: f64, key: &[u8]) -> f64 {
+    apply_modulus(value, key, |v, m| v * (m as f64 * 10000.0))
+}
 
-    pub fn xor_uint64(value: u64, key: &[u8]) -> u64 {
-        let mut bytes: [u8; 8] = [0u8; 8];
-        LittleEndian::write_u64(&mut bytes, value);
-        let xored_bytes: Vec<u8> = xor_bytes(&bytes, key);
-        LittleEndian::read_u64(&xored_bytes)
-    }
+pub fn create_key(bytes: &[u8]) -> [u8; 8] {
+    let seed: u32 = calculate_xxhash(bytes, false, false) as u32;
+    let mut rng: Mt = Mt::new(seed);
+    let mut buf: [u8; 8] = [0u8; 8];
+    next_bytes(&mut rng, &mut buf);
+    buf
+}
 
-    pub fn convert_int(value: i32, key: &[u8]) -> i32 {
-        if value != 0 { xor_int32(value, key) } else { 0 }
-    }
+pub fn convert_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
+    let mut raw = general_purpose::STANDARD.decode(value.as_bytes())?;
 
-    pub fn convert_long(value: i64, key: &[u8]) -> i64 {
-        if value != 0 { xor_int64(value, key) } else { 0 }
-    }
+    xor_inplace(&mut raw, key);
 
-    pub fn convert_uint(value: u32, key: &[u8]) -> u32 {
-        if value != 0 { xor_uint32(value, key) } else { 0 }
-    }
+    if raw.len() % 2 == 0 {
+        let utf16_bytes: Vec<u16> = raw
+            .chunks_exact(2)
+            .map(|x| u16::from_le_bytes([x[0], x[1]]))
+            .collect();
 
-    pub fn convert_ulong(value: u64, key: &[u8]) -> u64 {
-        if value != 0 { xor_uint64(value, key) } else { 0 }
-    }
-
-    pub fn convert_enum<T>(value: T, key: &[u8]) -> T 
-    where 
-        T: Copy + flatbuffers::EndianScalar,
-        T::Scalar: Into<i32> + From<i32> + Copy
-    {
-        let scalar_val: i32 = value.to_little_endian().into();
-        let converted = if scalar_val != 0 { convert_int(scalar_val, key) } else { 0 };
-        T::from_little_endian(T::Scalar::from(converted))
-    }
-
-    pub fn convert_float(value: f32, key: &[u8]) -> f32 {
-        if value == 0.0 {
-            return 0.0;
-        }
-
-        let modulus: i32 = calculate_modulus(key);
-        if modulus == 1 {
-            return value;
-        }
-        (value / modulus as f32) / 10000.0
-    }
-
-    pub fn convert_double(value: f64, key: &[u8]) -> f64 {
-        convert_float(value as f32, key) as f64
-    }
-
-    pub fn encrypt_float(value: f32, key: &[u8]) -> f32 {
-        if value == 0.0 {
-            return 0.0;
-        }
-
-        let modulus: i32 = calculate_modulus(key);
-        if modulus == 1 {
-            return value;
-        }
-        (value * 10000.0) * modulus as f32
-    }
-
-    pub fn encrypt_double(value: f64, key: &[u8]) -> f64 {
-        encrypt_float(value as f32, key) as f64
-    }
-
-    pub fn create_key(bytes: &[u8]) -> [u8; 8] {
-        let seed: u32 = calculate_xxhash(bytes, false, false) as u32;
-        let mut rng: Mt = Mt::new(seed);
-        let mut buf: [u8; 8] = [0u8; 8];
-        next_bytes(&mut rng, &mut buf);
-        buf
-    }
-
-    pub fn convert_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
-        let mut raw: Vec<u8> = general_purpose::STANDARD.decode(value.as_bytes())?;
-        let bytes: Vec<u8> = xor_with_key(&mut raw, key);
-        let utf16_bytes: Vec<u16> = bytes.chunks_exact(2).map(|x| u16::from_le_bytes([x[0], x[1]])).collect::<Vec<u16>>();
-        match String::from_utf16(&utf16_bytes) {
-            Ok(s) => Ok(s),
-            Err(_) => Ok(bytes.iter().map(|x| *x as char).collect::<String>()),
+        if let Ok(s) = String::from_utf16(&utf16_bytes) {
+            return Ok(s);
         }
     }
 
-    pub fn new_encrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
-        if value.is_empty() || value.len() < 8 {
-            return Ok(value.to_string());
-        }
-        let mut raw: Vec<u8> = value.encode_utf16().flat_map(|x| x.to_le_bytes()).collect::<Vec<u8>>();
-        let xor: Vec<u8> = xor_with_key(&mut raw, key);
-        Ok(general_purpose::STANDARD.encode(&xor))
+    Ok(raw.iter().map(|&x| x as char).collect())
+}
+
+pub fn new_encrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
+    if value.is_empty() || value.len() < 8 {
+        return Ok(value.to_string());
     }
+
+    let mut raw: Vec<u8> = value.encode_utf16().flat_map(|x| x.to_le_bytes()).collect();
+
+    xor_inplace(&mut raw, key);
+
+    Ok(general_purpose::STANDARD.encode(&raw))
 }

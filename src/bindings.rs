@@ -6,7 +6,7 @@
 //! - `bacy::hash::*` for hash functions
 //! - `bacy::catalog::*` for catalog operations  
 //! - `bacy::crc_service::*` for CRC manipulation
-//! - `bacy::table_encryption::table_encryption_service::*` for encryption
+//! - `bacy::table_encryption::*` for encryption
 //! - `bacy::table_zip::*` for ZIP operations
 //! 
 //! **For other languages (Python, Swift, etc.):** Use the generated bindings from UniFFI.
@@ -112,75 +112,75 @@ pub fn table_catalog_to_json(wrapper: TableCatalog) -> Result<String, Error> {
 }
 
 pub fn xor_str(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::table_encryption_service::xor_str(&value, &key)
+    crate::table_encryption::xor_str(&value, &key)
 }
 
 pub fn xor_data(name: String, data: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::table_encryption_service::xor(&name, &data)
+    crate::table_encryption::xor(&name, &data)
 }
 
 pub fn xor_bytes(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::table_encryption_service::xor_bytes(&value, &key)
+    crate::table_encryption::xor_bytes(&value, &key)
 }
 
 pub fn xor_int32(value: i32, key: Vec<u8>) -> i32 {
-    crate::table_encryption::table_encryption_service::xor_int32(value, &key)
+    crate::table_encryption::xor_int32(value, &key)
 }
 
 pub fn xor_int64(value: i64, key: Vec<u8>) -> i64 {
-    crate::table_encryption::table_encryption_service::xor_int64(value, &key)
+    crate::table_encryption::xor_int64(value, &key)
 }
 
 pub fn xor_uint32(value: u32, key: Vec<u8>) -> u32 {
-    crate::table_encryption::table_encryption_service::xor_uint32(value, &key)
+    crate::table_encryption::xor_uint32(value, &key)
 }
 
 pub fn xor_uint64(value: u64, key: Vec<u8>) -> u64 {
-    crate::table_encryption::table_encryption_service::xor_uint64(value, &key)
+    crate::table_encryption::xor_uint64(value, &key)
 }
 
 pub fn convert_int(value: i32, key: Vec<u8>) -> i32 {
-    crate::table_encryption::table_encryption_service::convert_int(value, &key)
+    crate::table_encryption::convert_int(value, &key)
 }
 
 pub fn convert_long(value: i64, key: Vec<u8>) -> i64 {
-    crate::table_encryption::table_encryption_service::convert_long(value, &key)
+    crate::table_encryption::convert_long(value, &key)
 }
 
 pub fn convert_uint(value: u32, key: Vec<u8>) -> u32 {
-    crate::table_encryption::table_encryption_service::convert_uint(value, &key)
+    crate::table_encryption::convert_uint(value, &key)
 }
 
 pub fn convert_ulong(value: u64, key: Vec<u8>) -> u64 {
-    crate::table_encryption::table_encryption_service::convert_ulong(value, &key)
+    crate::table_encryption::convert_ulong(value, &key)
 }
 
 pub fn convert_float(value: f32, key: Vec<u8>) -> f32 {
-    crate::table_encryption::table_encryption_service::convert_float(value, &key)
+    crate::table_encryption::convert_float(value, &key)
 }
 
 pub fn convert_double(value: f64, key: Vec<u8>) -> f64 {
-    crate::table_encryption::table_encryption_service::convert_double(value, &key)
+    crate::table_encryption::convert_double(value, &key)
 }
 
 pub fn encrypt_float(value: f32, key: Vec<u8>) -> f32 {
-    crate::table_encryption::table_encryption_service::encrypt_float(value, &key)
+    crate::table_encryption::encrypt_float(value, &key)
 }
 
 pub fn encrypt_double(value: f64, key: Vec<u8>) -> f64 {
-    crate::table_encryption::table_encryption_service::encrypt_double(value, &key)
+    crate::table_encryption::encrypt_double(value, &key)
 }
 
 pub fn create_key(bytes: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::table_encryption_service::create_key(&bytes).to_vec()
+    crate::table_encryption::create_key(&bytes).to_vec()
 }
 
 pub fn convert_string(value: String, key: Vec<u8>) -> Result<String, Error> {
-    Ok(crate::table_encryption::table_encryption_service::convert_string(&value, &key)?)
+    Ok(crate::table_encryption::convert_string(&value, &key)?)
 }
 
 pub fn encrypt_string(value: String, key: Vec<u8>) -> Result<String, Error> {
-    Ok(crate::table_encryption::table_encryption_service::new_encrypt_string(&value, &key)?)
+    Ok(crate::table_encryption::new_encrypt_string(&value, &key)?)
 }
 
 pub fn extract_zip_file(zip_data: Vec<u8>, filename: String, file_to_extract: String) -> Result<Vec<u8>, Error> {
@@ -196,11 +196,11 @@ pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<
 }
 
 pub fn use_encryption() -> bool {
-    crate::table_encryption::table_encryption_service::use_encryption()
+    crate::table_encryption::use_encryption()
 }
 
 pub fn set_use_encryption(enabled: bool) {
-    crate::table_encryption::table_encryption_service::set_use_encryption(enabled)
+    crate::table_encryption::set_use_encryption(enabled)
 }
 
 #[derive(Debug, Clone)]

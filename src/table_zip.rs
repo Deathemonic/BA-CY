@@ -1,6 +1,6 @@
 use crate::error::TableZipError;
 use crate::hash::calculate_xxhash;
-use crate::table_encryption::table_encryption_service::next_bytes;
+use crate::table_encryption::next_bytes;
 
 use base64::{engine::general_purpose, Engine};
 use rand_mt::Mt;

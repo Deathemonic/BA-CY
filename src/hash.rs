@@ -51,11 +51,7 @@ pub fn calculate_xxhash(bytes: &[u8], bit64: bool, endian: bool) -> u64 {
     hasher.update(bytes);
     let hash = hasher.digest();
 
-    if endian && cfg!(target_endian = "little") {
-        hash.to_be()
-    } else {
-        hash
-    }
+    if endian && cfg!(target_endian = "little") { hash.to_be() } else { hash }
 }
 
 pub fn encrypt_name(filename: &str, crc: i64) -> Result<String, HashError> {
