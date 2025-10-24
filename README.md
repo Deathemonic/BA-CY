@@ -10,3 +10,9 @@ Add this to your `Cargo.toml`:
 [dependencies]
 bacy = { git = "https://github.com/Deathemonic/BA-CY" }
 ```
+
+or run:
+
+```sh
+cargo add --git https://github.com/Deathemonic/BA-CY
+```
