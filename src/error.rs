@@ -2,10 +2,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MemoryPackError {
-    #[error("{0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Utf8(#[from] std::string::FromUtf8Error),
 
     #[error("Invalid data length: {0}")]
@@ -14,28 +14,28 @@ pub enum MemoryPackError {
 
 #[derive(Error, Debug)]
 pub enum TableZipError {
-    #[error("{0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Zip(#[from] zip::result::ZipError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
 }
 
 #[derive(Error, Debug)]
 pub enum HashError {
-    #[error("{0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 }
 
 #[derive(Error, Debug)]
 pub enum CatalogError {
-    #[error("{0}")]
+    #[error(transparent)]
     MemoryPack(#[from] MemoryPackError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Json(#[from] serde_json::Error),
 
     #[error("Failed to serialize catalog to JSON")]
@@ -47,7 +47,7 @@ pub enum CatalogError {
 
 #[derive(Error, Debug)]
 pub enum TableEncryptionError {
-    #[error("{0}")]
+    #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
     
     #[error("String conversion failed")]
