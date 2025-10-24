@@ -16,6 +16,7 @@ pub fn set_use_encryption(enabled: bool) {
     *USE_ENCRYPTION.write() = enabled;
 }
 
+#[inline]
 fn gen_int31(rng: &mut Mt) -> u32 {
     rng.next_u32() >> 1
 }
@@ -49,6 +50,7 @@ pub fn next_bytes(rng: &mut Mt, buf: &mut [u8]) {
     }
 }
 
+#[inline]
 pub fn xor_str(value: &[u8], key: &[u8]) -> Vec<u8> {
     value.iter().zip(key.iter()).map(|(a, b)| a ^ b).collect()
 }
@@ -61,6 +63,7 @@ pub fn xor_bytes(value: &[u8], key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+#[inline]
 pub fn xor_inplace(data: &mut [u8], key: &[u8]) {
     data.iter_mut()
         .zip(key.iter().cycle())
@@ -100,18 +103,22 @@ pub fn xor_uint64(value: u64, key: &[u8]) -> u64 {
     u64::from_le_bytes(bytes)
 }
 
+#[inline]
 pub fn convert_int(value: i32, key: &[u8]) -> i32 {
     if value != 0 { xor_int32(value, key) } else { 0 }
 }
 
+#[inline]
 pub fn convert_long(value: i64, key: &[u8]) -> i64 {
     if value != 0 { xor_int64(value, key) } else { 0 }
 }
 
+#[inline]
 pub fn convert_uint(value: u32, key: &[u8]) -> u32 {
     if value != 0 { xor_uint32(value, key) } else { 0 }
 }
 
+#[inline]
 pub fn convert_ulong(value: u64, key: &[u8]) -> u64 {
     if value != 0 { xor_uint64(value, key) } else { 0 }
 }
