@@ -1,7 +1,7 @@
 use crate::error::TableEncryptionError;
 use crate::hash::calculate_xxhash;
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use rand_mt::Mt;
@@ -190,7 +190,7 @@ pub fn convert_string(value: &str, key: &[u8]) -> Result<String, TableEncryption
     Ok(raw.iter().map(|&x| x as char).collect())
 }
 
-pub fn new_encrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
+pub fn encrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
     if value.is_empty() || value.len() < 8 {
         return Ok(value.to_string());
     }

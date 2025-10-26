@@ -1,25 +1,25 @@
 //! # WARNING: Internal UniFFI Bindings Module
-//! 
+//!
 //! This module contains UniFFI binding wrappers and should NOT be used directly in Rust code.
-//! 
+//!
 //! **For Rust users:** Use the functions and types from the main library modules instead:
 //! - `bacy::hash::*` for hash functions
-//! - `bacy::catalog::*` for catalog operations  
+//! - `bacy::catalog::*` for catalog operations
 //! - `bacy::crc_service::*` for CRC manipulation
 //! - `bacy::table_encryption::*` for encryption
 //! - `bacy::table_zip::*` for ZIP operations
-//! 
+//!
 //! **For other languages (Python, Swift, etc.):** Use the generated bindings from UniFFI.
-//! 
+//!
 //! This module exists solely to provide UniFFI-compatible wrappers that convert between
 //! Rust types and UniFFI-compatible types (e.g., `&str` → `String`, `&[u8]` → `Vec<u8>`
 
-use crate::hash::CrcResult;
 use crate::catalog::{Media, Table};
-use crate::error::{HashError, CatalogError, TableEncryptionError, TableZipError};
+use crate::error::{CatalogError, HashError, TableEncryptionError, TableZipError};
+use crate::hash::CrcResult;
 
-use std::path::PathBuf;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -180,19 +180,29 @@ pub fn convert_string(value: String, key: Vec<u8>) -> Result<String, Error> {
 }
 
 pub fn encrypt_string(value: String, key: Vec<u8>) -> Result<String, Error> {
-    Ok(crate::table_encryption::new_encrypt_string(&value, &key)?)
+    Ok(crate::table_encryption::encrypt_string(&value, &key)?)
 }
 
-pub fn extract_zip_file(zip_data: Vec<u8>, filename: String, file_to_extract: String) -> Result<Vec<u8>, Error> {
+pub fn extract_zip_file(
+    zip_data: Vec<u8>,
+    filename: String,
+    file_to_extract: String,
+) -> Result<Vec<u8>, Error> {
     let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
     Ok(zip_file.get_by_name(&file_to_extract)?)
 }
 
-pub fn extract_all_zip_files(zip_data: Vec<u8>, filename: String) -> Result<Vec<ZipFileEntry>, Error> {
+pub fn extract_all_zip_files(
+    zip_data: Vec<u8>,
+    filename: String,
+) -> Result<Vec<ZipFileEntry>, Error> {
     let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
     let files = zip_file.extract_all()?;
 
-    Ok(files.into_iter().map(|(name, data)| ZipFileEntry { name, data }).collect())
+    Ok(files
+        .into_iter()
+        .map(|(name, data)| ZipFileEntry { name, data })
+        .collect())
 }
 
 pub fn use_encryption() -> bool {
