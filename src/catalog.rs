@@ -72,13 +72,13 @@ pub struct TableCatalog {
 }
 
 #[inline]
-pub fn deserialize_media_catalog(bytes: &[u8]) -> Result<HashMap<String, Media>, CatalogError> {
+pub fn deserialize_media_catalog(bytes: &[u8]) -> Result<MediaCatalog, CatalogError> {
     let catalog = MemoryPackSerializer::deserialize::<MediaCatalog>(bytes)?;
-    Ok(catalog.table)
+    Ok(catalog)
 }
 
 #[inline]
-pub fn deserialize_table_catalog(bytes: &[u8]) -> Result<HashMap<String, Table>, CatalogError> {
+pub fn deserialize_table_catalog(bytes: &[u8]) -> Result<TableCatalog, CatalogError> {
     let catalog = MemoryPackSerializer::deserialize::<TableCatalog>(bytes)?;
-    Ok(catalog.table)
+    Ok(catalog)
 }
