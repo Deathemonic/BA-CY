@@ -17,6 +17,8 @@
 use crate::catalog::{MediaCatalog, TableCatalog};
 use crate::error::{CatalogError, HashError, TableEncryptionError, TableZipError};
 use crate::hash::CrcResult;
+
+use memorypack::MemoryPackSerializer;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -83,20 +85,20 @@ pub fn encrypt_name(filename: String, crc: i64) -> Result<String, Error> {
     Ok(crate::hash::encrypt_name(&filename, crc)?)
 }
 
-pub fn deserialize_media_catalog(bytes: Vec<u8>, base_url: String) -> Result<MediaCatalog, Error> {
-    Ok(MediaCatalog::deserialize(&bytes, &base_url)?)
+pub fn deserialize_media_catalog(bytes: Vec<u8>) -> Result<MediaCatalog, Error> {
+    Ok(MemoryPackSerializer::deserialize::<MediaCatalog>(&bytes)?)
 }
 
-pub fn deserialize_table_catalog(bytes: Vec<u8>, base_url: String) -> Result<TableCatalog, Error> {
-    Ok(TableCatalog::deserialize(&bytes, &base_url)?)
+pub fn deserialize_table_catalog(bytes: Vec<u8>) -> Result<TableCatalog, Error> {
+    Ok(MemoryPackSerializer::deserialize::<TableCatalog>(&bytes)?)
 }
 
 pub fn media_catalog_to_json(catalog: MediaCatalog) -> Result<String, Error> {
-    Ok(catalog.to_json()?)
+    Ok(serde_json::to_string_pretty(&catalog.table)?)
 }
 
 pub fn table_catalog_to_json(catalog: TableCatalog) -> Result<String, Error> {
-    Ok(catalog.to_json()?)
+    Ok(serde_json::to_string_pretty(&catalog.table)?)
 }
 
 pub fn xor_str(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {

@@ -1,6 +1,6 @@
-use memorypack::{MemoryPackSerializer, MemoryPackable};
-use serde::{Deserialize, Serialize};
 use hashbrown::HashMap;
+use memorypack::MemoryPackable;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "PascalCase")]
@@ -57,55 +57,14 @@ pub struct Table {
     pub includes: Vec<String>,
 }
 
-macro_rules! define_catalog {
-    ($catalog_name:ident, $item_type:ty) => {
-        #[derive(MemoryPackable, Serialize, Deserialize, Debug, Clone, Default)]
-        #[serde(rename_all = "PascalCase")]
-        pub struct $catalog_name {
-            pub table: HashMap<String, $item_type>,
-            #[serde(skip)]
-            #[memorypack(skip)]
-            pub base_url: String,
-        }
-
-        impl $catalog_name {
-            pub fn new(table: HashMap<String, $item_type>, base_url: &str) -> Self {
-                Self {
-                    table,
-                    base_url: base_url.to_string(),
-                }
-            }
-
-            pub fn to_json(&self) -> Result<String, serde_json::Error> {
-                serde_json::to_string_pretty(self)
-            }
-
-            pub fn from_json(json_data: &str, base_url: &str) -> Result<Self, serde_json::Error> {
-                let mut catalog: Self = serde_json::from_str(json_data)?;
-                catalog.base_url = base_url.to_string();
-                Ok(catalog)
-            }
-
-            pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self, memorypack::MemoryPackError> {
-                let mut catalog = MemoryPackSerializer::deserialize::<Self>(bytes)?;
-                catalog.base_url = base_url.to_string();
-                Ok(catalog)
-            }
-
-            pub fn serialize(&self) -> Result<Vec<u8>, memorypack::MemoryPackError> {
-                MemoryPackSerializer::serialize(self)
-            }
-
-            pub fn get_table(&self) -> &HashMap<String, $item_type> {
-                &self.table
-            }
-
-            pub fn get_base_url(&self) -> &str {
-                &self.base_url
-            }
-        }
-    };
+#[derive(MemoryPackable, Serialize, Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "PascalCase")]
+pub struct MediaCatalog {
+    pub table: HashMap<String, Media>,
 }
 
-define_catalog!(MediaCatalog, Media);
-define_catalog!(TableCatalog, Table);
+#[derive(MemoryPackable, Serialize, Deserialize, Debug, Clone, Default)]
+#[serde(rename_all = "PascalCase")]
+pub struct TableCatalog {
+    pub table: HashMap<String, Table>,
+}
