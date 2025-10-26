@@ -1,5 +1,5 @@
 use hashbrown::HashMap;
-use memorypack::MemoryPackable;
+use memorypack::{MemoryPackSerializer, MemoryPackable, MemoryPackError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -67,4 +67,16 @@ pub struct MediaCatalog {
 #[serde(rename_all = "PascalCase")]
 pub struct TableCatalog {
     pub table: HashMap<String, Table>,
+}
+
+#[inline]
+pub fn deserialize_media_catalog(bytes: &[u8]) -> Result<HashMap<String, Media>, MemoryPackError> {
+    let catalog = MemoryPackSerializer::deserialize::<MediaCatalog>(bytes)?;
+    Ok(catalog.table)
+}
+
+#[inline]
+pub fn deserialize_table_catalog(bytes: &[u8]) -> Result<HashMap<String, Table>, MemoryPackError> {
+    let catalog = MemoryPackSerializer::deserialize::<TableCatalog>(bytes)?;
+    Ok(catalog.table)
 }
