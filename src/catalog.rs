@@ -1,5 +1,7 @@
+use crate::error::CatalogError;
+
 use hashbrown::HashMap;
-use memorypack::{MemoryPackSerializer, MemoryPackable, MemoryPackError};
+use memorypack::{MemoryPackSerializer, MemoryPackable};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -70,13 +72,13 @@ pub struct TableCatalog {
 }
 
 #[inline]
-pub fn deserialize_media_catalog(bytes: &[u8]) -> Result<HashMap<String, Media>, MemoryPackError> {
+pub fn deserialize_media_catalog(bytes: &[u8]) -> Result<HashMap<String, Media>, CatalogError> {
     let catalog = MemoryPackSerializer::deserialize::<MediaCatalog>(bytes)?;
     Ok(catalog.table)
 }
 
 #[inline]
-pub fn deserialize_table_catalog(bytes: &[u8]) -> Result<HashMap<String, Table>, MemoryPackError> {
+pub fn deserialize_table_catalog(bytes: &[u8]) -> Result<HashMap<String, Table>, CatalogError> {
     let catalog = MemoryPackSerializer::deserialize::<TableCatalog>(bytes)?;
     Ok(catalog.table)
 }
