@@ -1,18 +1,6 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum MemoryPackError {
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-
-    #[error(transparent)]
-    Utf8(#[from] std::string::FromUtf8Error),
-
-    #[error("Invalid data length: {0}")]
-    InvalidLength(i32),
-}
-
-#[derive(Error, Debug)]
 pub enum TableZipError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -36,7 +24,7 @@ pub enum HashError {
 #[derive(Error, Debug)]
 pub enum CatalogError {
     #[error(transparent)]
-    MemoryPack(#[from] MemoryPackError),
+    MemoryPack(#[from] memorypack::MemoryPackError),
 
     #[error(transparent)]
     Json(#[from] serde_json::Error),
@@ -52,7 +40,7 @@ pub enum CatalogError {
 pub enum TableEncryptionError {
     #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
-    
+
     #[error("String conversion failed")]
     StringConversionFailed,
 }

@@ -14,11 +14,9 @@
 //! This module exists solely to provide UniFFI-compatible wrappers that convert between
 //! Rust types and UniFFI-compatible types (e.g., `&str` → `String`, `&[u8]` → `Vec<u8>`
 
-use crate::catalog::{Media, Table};
+use crate::catalog::{MediaCatalog, TableCatalog};
 use crate::error::{CatalogError, HashError, TableEncryptionError, TableZipError};
 use crate::hash::CrcResult;
-
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -51,16 +49,16 @@ impl From<TableZipError> for Error {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct MediaCatalog {
-    pub table: HashMap<String, Media>,
-    pub base_url: String,
+impl From<memorypack::MemoryPackError> for Error {
+    fn from(err: memorypack::MemoryPackError) -> Self {
+        Error::Generic(err.to_string())
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct TableCatalog {
-    pub table: HashMap<String, Table>,
-    pub base_url: String,
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Error::Generic(err.to_string())
+    }
 }
 
 pub fn calculate_crc32(path: String) -> Result<u32, Error> {
@@ -86,28 +84,18 @@ pub fn encrypt_name(filename: String, crc: i64) -> Result<String, Error> {
 }
 
 pub fn deserialize_media_catalog(bytes: Vec<u8>, base_url: String) -> Result<MediaCatalog, Error> {
-    let catalog = crate::catalog::MediaCatalog::deserialize(&bytes, &base_url)?;
-    Ok(MediaCatalog {
-        table: catalog.get_table().clone(),
-        base_url: catalog.get_base_url().to_string(),
-    })
+    Ok(MediaCatalog::deserialize(&bytes, &base_url)?)
 }
 
 pub fn deserialize_table_catalog(bytes: Vec<u8>, base_url: String) -> Result<TableCatalog, Error> {
-    let catalog = crate::catalog::TableCatalog::deserialize(&bytes, &base_url)?;
-    Ok(TableCatalog {
-        table: catalog.get_table().clone(),
-        base_url: catalog.get_base_url().to_string(),
-    })
+    Ok(TableCatalog::deserialize(&bytes, &base_url)?)
 }
 
-pub fn media_catalog_to_json(wrapper: MediaCatalog) -> Result<String, Error> {
-    let catalog = crate::catalog::MediaCatalog::new(wrapper.table, &wrapper.base_url);
+pub fn media_catalog_to_json(catalog: MediaCatalog) -> Result<String, Error> {
     Ok(catalog.to_json()?)
 }
 
-pub fn table_catalog_to_json(wrapper: TableCatalog) -> Result<String, Error> {
-    let catalog = crate::catalog::TableCatalog::new(wrapper.table, &wrapper.base_url);
+pub fn table_catalog_to_json(catalog: TableCatalog) -> Result<String, Error> {
     Ok(catalog.to_json()?)
 }
 
