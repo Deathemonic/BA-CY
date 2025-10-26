@@ -1,4 +1,4 @@
-use memorypack::{MemoryPackSerializer, MemoryPackSerialize, MemoryPackDeserialize, MemoryPackable};
+use memorypack::{MemoryPackSerializer, MemoryPackable};
 use serde::{Deserialize, Serialize};
 use hashbrown::HashMap;
 
@@ -57,55 +57,55 @@ pub struct Table {
     pub includes: Vec<String>,
 }
 
-#[derive(MemoryPackable, Serialize, Deserialize, Debug, Clone, Default)]
-#[serde(rename_all = "PascalCase")]
-pub struct Catalog<T: MemoryPackSerialize + MemoryPackDeserialize + Default> {
-    pub table: HashMap<String, T>,
-
-    #[serde(skip)]
-    #[memorypack(skip)]
-    pub base_url: String,
-}
-
-impl<T> Catalog<T>
-where
-    T: MemoryPackSerialize + MemoryPackDeserialize + Serialize + for<'de> Deserialize<'de> + Clone + Default,
-{
-    pub fn new(table: HashMap<String, T>, base_url: &str) -> Self {
-        Self {
-            table,
-            base_url: base_url.to_string(),
+macro_rules! define_catalog {
+    ($catalog_name:ident, $item_type:ty) => {
+        #[derive(MemoryPackable, Serialize, Deserialize, Debug, Clone, Default)]
+        #[serde(rename_all = "PascalCase")]
+        pub struct $catalog_name {
+            pub table: HashMap<String, $item_type>,
+            #[serde(skip)]
+            #[memorypack(skip)]
+            pub base_url: String,
         }
-    }
 
-    pub fn to_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string_pretty(self)
-    }
+        impl $catalog_name {
+            pub fn new(table: HashMap<String, $item_type>, base_url: &str) -> Self {
+                Self {
+                    table,
+                    base_url: base_url.to_string(),
+                }
+            }
 
-    pub fn from_json(json_data: &str, base_url: &str) -> Result<Self, serde_json::Error> {
-        let mut catalog: Self = serde_json::from_str(json_data)?;
-        catalog.base_url = base_url.to_string();
-        Ok(catalog)
-    }
+            pub fn to_json(&self) -> Result<String, serde_json::Error> {
+                serde_json::to_string_pretty(self)
+            }
 
-    pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self, memorypack::MemoryPackError> {
-        let mut catalog = MemoryPackSerializer::deserialize::<Self>(bytes)?;
-        catalog.base_url = base_url.to_string();
-        Ok(catalog)
-    }
+            pub fn from_json(json_data: &str, base_url: &str) -> Result<Self, serde_json::Error> {
+                let mut catalog: Self = serde_json::from_str(json_data)?;
+                catalog.base_url = base_url.to_string();
+                Ok(catalog)
+            }
 
-    pub fn serialize(&self) -> Result<Vec<u8>, memorypack::MemoryPackError> {
-        MemoryPackSerializer::serialize(self)
-    }
+            pub fn deserialize(bytes: &[u8], base_url: &str) -> Result<Self, memorypack::MemoryPackError> {
+                let mut catalog = MemoryPackSerializer::deserialize::<Self>(bytes)?;
+                catalog.base_url = base_url.to_string();
+                Ok(catalog)
+            }
 
-    pub fn get_table(&self) -> &HashMap<String, T> {
-        &self.table
-    }
+            pub fn serialize(&self) -> Result<Vec<u8>, memorypack::MemoryPackError> {
+                MemoryPackSerializer::serialize(self)
+            }
 
-    pub fn get_base_url(&self) -> &str {
-        &self.base_url
-    }
+            pub fn get_table(&self) -> &HashMap<String, $item_type> {
+                &self.table
+            }
+
+            pub fn get_base_url(&self) -> &str {
+                &self.base_url
+            }
+        }
+    };
 }
 
-pub type MediaCatalog = Catalog<Media>;
-pub type TableCatalog = Catalog<Table>;
+define_catalog!(MediaCatalog, Media);
+define_catalog!(TableCatalog, Table);
