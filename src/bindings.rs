@@ -203,6 +203,16 @@ pub fn set_use_encryption(enabled: bool) {
     crate::table_encryption::set_use_encryption(enabled)
 }
 
+pub fn forge_crc(file_path: String, target_crc: u32) -> Result<(), Error> {
+    let manipulator = crate::crc::CrcManipulator::new(file_path);
+    Ok(manipulator.forge_crc(target_crc)?)
+}
+
+pub fn match_crc(file_path: String, target_file_path: String) -> Result<(), Error> {
+    let manipulator = crate::crc::CrcManipulator::new(file_path);
+    Ok(manipulator.match_file(std::path::Path::new(&target_file_path))?)
+}
+
 #[derive(Debug, Clone)]
 pub struct ZipFileEntry {
     pub name: String,

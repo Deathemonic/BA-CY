@@ -12,13 +12,19 @@ pub enum TableZipError {
     Base64Decode(#[from] base64::DecodeError),
 
     #[error(transparent)]
-    EncodeSlice(#[from] base64::EncodeSliceError)
+    EncodeSlice(#[from] base64::EncodeSliceError),
 }
 
 #[derive(Error, Debug)]
 pub enum HashError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error("Invalid file path")]
+    InvalidPath,
+
+    #[error("Expected 0x{expected:08X}, got 0x{actual:08X}")]
+    Mismatch { expected: u32, actual: u32 },
 }
 
 #[derive(Error, Debug)]

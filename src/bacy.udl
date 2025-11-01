@@ -60,6 +60,12 @@ namespace bacy {
   
   boolean use_encryption();
   void set_use_encryption(boolean enabled);
+  
+  [Throws=Error]
+  void forge_crc(string file_path, u32 target_crc);
+  
+  [Throws=Error]
+  void match_crc(string file_path, string target_file_path);
 };
 
 dictionary CrcResult {
