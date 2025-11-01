@@ -5,8 +5,8 @@ use crc32fast::{hash, Hasher};
 use std::fs;
 use std::path::Path;
 
-const CRC32_POLY_NORMAL: u64 = 0x104C11DB7;
-const CRC32_POLY_DEGREE: i32 = 32;
+const POLY_NORMAL: u64 = 0x104C11DB7;
+const POLY_DEGREE: i32 = 32;
 const GF2_INVERSE_X32: u64 = 0xCBF1ACDA;
 
 pub struct CrcManipulator {
@@ -32,8 +32,8 @@ impl CrcManipulator {
             b >>= 1;
             a <<= 1;
 
-            if a >> CRC32_POLY_DEGREE != 0 {
-                a ^= CRC32_POLY_NORMAL;
+            if a >> POLY_DEGREE != 0 {
+                a ^= POLY_NORMAL;
             }
         }
 
