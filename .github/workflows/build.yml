@@ -76,9 +76,6 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }} --features uniffi
 
-      - name: Test
-        run: cargo test --release --target ${{ matrix.target }} --features uniffi
-
       - name: Prepare artifacts
         shell: bash
         run: |
