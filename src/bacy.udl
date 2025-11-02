@@ -1,34 +1,74 @@
 [Error]
-enum Error {
-  "Generic",
+enum HashError {
+  "Io",
+  "InvalidPath",
+  "Mismatch",
+};
+
+[Error]
+enum CatalogError {
+  "MemoryPack",
+  "Json",
+  "SerializationFailed",
+  "DeserializationFailed",
+};
+
+[Error]
+enum TableEncryptionError {
+  "Base64Decode",
+  "StringConversionFailed",
+};
+
+[Error]
+enum TableZipError {
+  "Io",
+  "Zip",
+  "Base64Decode",
+  "EncodeSlice",
 };
 
 namespace bacy {
-  [Throws=Error]
+  [Throws=HashError]
   u32 calculate_crc32(string path);
-  
-  CrcResult evaluate_crc32(bytes data);
-  
-  [Throws=Error]
+
+  [Throws=HashError]
   string calculate_md5(string path);
-  
-  u64 calculate_xxhash(bytes data, boolean bit64, boolean endian);
-  
-  [Throws=Error]
+
+  [Throws=HashError]
   string encrypt_name(string filename, i64 crc);
-  
-  [Throws=Error]
-  MediaCatalog deserialize_media_catalog(bytes data, string base_url);
-  
-  [Throws=Error]
-  TableCatalog deserialize_table_catalog(bytes data, string base_url);
-  
-  [Throws=Error]
+
+  [Throws=CatalogError]
+  MediaCatalog deserialize_media_catalog(bytes data);
+
+  [Throws=CatalogError]
+  TableCatalog deserialize_table_catalog(bytes data);
+
+  [Throws=CatalogError]
   string media_catalog_to_json(MediaCatalog catalog);
-  
-  [Throws=Error]
+
+  [Throws=CatalogError]
   string table_catalog_to_json(TableCatalog catalog);
-  
+
+  [Throws=TableEncryptionError]
+  string convert_string(string value, bytes key);
+
+  [Throws=TableEncryptionError]
+  string encrypt_string(string value, bytes key);
+
+  [Throws=TableZipError]
+  bytes extract_zip_file(bytes zip_data, string filename, string file_to_extract);
+
+  [Throws=TableZipError]
+  sequence<ZipFileEntry> extract_all_zip_files(bytes zip_data, string filename);
+
+  [Throws=HashError]
+  void forge_crc(string file_path, u32 target_crc);
+
+  [Throws=HashError]
+  void match_crc(string file_path, string target_file_path);
+
+  CrcResult evaluate_crc32(bytes data);
+  u64 calculate_xxhash(bytes data, boolean bit64, boolean endian);
   bytes xor_str(bytes value, bytes key);
   bytes xor_data(string name, bytes data);
   bytes xor_bytes(bytes value, bytes key);
@@ -45,27 +85,8 @@ namespace bacy {
   f32 encrypt_float(f32 value, bytes key);
   f64 encrypt_double(f64 value, bytes key);
   bytes create_key(bytes data);
-  
-  [Throws=Error]
-  string convert_string(string value, bytes key);
-  
-  [Throws=Error]
-  string encrypt_string(string value, bytes key);
-  
-  [Throws=Error]
-  bytes extract_zip_file(bytes zip_data, string filename, string file_to_extract);
-  
-  [Throws=Error]
-  sequence<ZipFileEntry> extract_all_zip_files(bytes zip_data, string filename);
-  
   boolean use_encryption();
   void set_use_encryption(boolean enabled);
-  
-  [Throws=Error]
-  void forge_crc(string file_path, u32 target_crc);
-  
-  [Throws=Error]
-  void match_crc(string file_path, string target_file_path);
 };
 
 dictionary CrcResult {
@@ -96,12 +117,10 @@ dictionary Table {
 
 dictionary MediaCatalog {
   record<string, Media> table;
-  string base_url;
 };
 
 dictionary TableCatalog {
   record<string, Table> table;
-  string base_url;
 };
 
 dictionary ZipFileEntry {

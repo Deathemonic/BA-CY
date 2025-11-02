@@ -6,7 +6,9 @@ pub mod hash;
 pub mod table_encryption;
 pub mod table_zip;
 
+#[cfg(not(feature = "uniffi"))]
 pub use catalog::{Asset, Media, MediaCatalog, Packing, Patch, Table, TableCatalog};
+
 pub use hash::CrcResult;
 
 #[cfg(feature = "uniffi")]
