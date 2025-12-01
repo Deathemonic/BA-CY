@@ -9,7 +9,9 @@ pub fn encrypt(data: &mut [u8], offset: usize, length: usize) {
     let end = (offset + length).min(data.len());
     let key_byte = (ENCRYPTION_KEY & 0xFF) as u8;
 
-    data[offset..end].iter_mut().for_each(|byte| *byte ^= key_byte);
+    data[offset..end]
+        .iter_mut()
+        .for_each(|byte| *byte ^= key_byte);
 }
 
 #[inline]

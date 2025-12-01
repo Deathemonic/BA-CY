@@ -1,4 +1,5 @@
 use crate::error::HashError;
+
 use crc32fast::Hasher;
 use std::fs::File;
 use std::io::Read;

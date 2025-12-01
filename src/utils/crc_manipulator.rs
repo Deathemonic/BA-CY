@@ -1,5 +1,6 @@
 use crate::error::HashError;
 use crate::hash::crc;
+
 use std::fs;
 use std::path::Path;
 

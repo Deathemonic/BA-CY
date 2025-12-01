@@ -7,9 +7,7 @@ pub struct MersenneTwister {
 impl MersenneTwister {
     #[inline]
     pub fn new(seed: u32) -> Self {
-        Self {
-            rng: Mt::new(seed),
-        }
+        Self { rng: Mt::new(seed) }
     }
 
     #[inline]

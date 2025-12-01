@@ -2,6 +2,7 @@ use crate::crypto::xor::xor_inplace;
 use crate::error::TableEncryptionError;
 use crate::hash::xxhash;
 use crate::math::mersenne::MersenneTwister;
+
 use base64::{engine::general_purpose::STANDARD, Engine};
 
 #[inline]

@@ -1,6 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use xxhash_rust::xxh32::xxh32;
-use xxhash_rust::xxh64::xxh64;
+use xxhash_rust::{xxh32::xxh32, xxh64::xxh64};
 
 static USE_BIG_ENDIAN: AtomicBool = AtomicBool::new(true);
 

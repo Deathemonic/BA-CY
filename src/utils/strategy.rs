@@ -1,4 +1,5 @@
 use crate::hash::xxhash;
+
 use std::path::{Path, PathBuf};
 
 pub fn get_file_path<P: AsRef<Path>>(
@@ -34,4 +35,3 @@ pub fn get_file_path<P: AsRef<Path>>(
         PathBuf::from(result)
     }
 }
-
