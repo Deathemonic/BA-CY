@@ -6,124 +6,99 @@ enum HashError {
 };
 
 [Error]
-enum CatalogError {
-  "MemoryPack",
-  "Json",
-  "SerializationFailed",
-  "DeserializationFailed",
-};
-
-[Error]
 enum TableEncryptionError {
   "Base64Decode",
   "StringConversionFailed",
 };
 
-[Error]
-enum TableZipError {
-  "Io",
-  "Zip",
-  "Base64Decode",
-  "EncodeSlice",
-};
-
 namespace bacy {
   [Throws=HashError]
-  u32 calculate_crc32(string path);
-
+  u32 crc_compute_streaming(string path, u64 buffer_size);
+  
+  u32 crc_compute_bytes(bytes buffer);
+  
   [Throws=HashError]
-  string calculate_md5(string path);
-
+  void crc_compare(string path, u32 expected_crc);
+  
+  CrcResult crc_evaluate(bytes data);
+  
   [Throws=HashError]
-  string encrypt_name(string filename, i64 crc);
+  void crc_forge(string file_path, u32 target_crc);
+  
+  [Throws=HashError]
+  void crc_match_file(string file_path, string target_file_path);
+  
+  string md5_to_hex_string(bytes data);
 
-  [Throws=CatalogError]
-  MediaCatalog deserialize_media_catalog(bytes data);
-
-  [Throws=CatalogError]
-  TableCatalog deserialize_table_catalog(bytes data);
-
-  [Throws=CatalogError]
-  string media_catalog_to_json(MediaCatalog catalog);
-
-  [Throws=CatalogError]
-  string table_catalog_to_json(TableCatalog catalog);
-
+  bytes md5_compute_hash(bytes source);
+  
+  bytes md5_compute_hash_hmac(bytes source, bytes key);
+  
+  string md5_compute_hash_str(string source);
+  
+  string md5_compute_hash_str_hmac(string source, string key);
+  
+  u32 md5_compute_digest(string source);
+  
+  u32 md5_compute_digest_hmac(string source, string key);
+  
+  u64 md5_compute_digest64(string source);
+  
+  u64 md5_compute_digest64_hmac(string source, string key);
+  
+  string md5_compute_head(string source);
+  
+  void xxhash_set_use_big_endian(boolean value);
+  
+  boolean xxhash_get_use_big_endian();
+  
+  u32 xxhash_calculate_hash(bytes data);
+  
+  u32 xxhash_calculate_hash_str(string s);
+  
+  u64 xxhash_calculate_hash64(bytes data);
+  
+  u64 xxhash_calculate_hash64_str(string s);
+  
+  void xor_encrypt(bytes data, u64 offset, u64 length);
+  
+  bytes? xor_encrypt_with_key(bytes data, bytes key);
+  
+  bytes xor_exact(bytes value, bytes key);
+  
+  bytes xor_inplace_bytes(bytes data, bytes key);
+  
+  bytes table_create_key(string name);
+  
+  string table_create_password(string key, u64 length);
+  
+  bytes table_xor(string name, bytes data);
+  
+  i32 table_decrypt_i32(i32 value, bytes key);
+  
+  i64 table_decrypt_i64(i64 value, bytes key);
+  
+  u32 table_decrypt_u32(u32 value, bytes key);
+  
+  u64 table_decrypt_u64(u64 value, bytes key);
+  
+  f32 table_decrypt_f32(f32 value, bytes key);
+  
+  f64 table_decrypt_f64(f64 value, bytes key);
+  
   [Throws=TableEncryptionError]
-  string convert_string(string value, bytes key);
-
-  [Throws=TableEncryptionError]
-  string encrypt_string(string value, bytes key);
-
-  [Throws=TableZipError]
-  bytes extract_zip_file(bytes zip_data, string filename, string file_to_extract);
-
-  [Throws=TableZipError]
-  sequence<ZipFileEntry> extract_all_zip_files(bytes zip_data, string filename);
-
-  [Throws=HashError]
-  void forge_crc(string file_path, u32 target_crc);
-
-  [Throws=HashError]
-  void match_crc(string file_path, string target_file_path);
-
-  CrcResult evaluate_crc32(bytes data);
-  u64 calculate_xxhash(bytes data, boolean bit64, boolean endian);
-  bytes xor_str(bytes value, bytes key);
-  bytes xor_data(string name, bytes data);
-  bytes xor_bytes(bytes value, bytes key);
-  i32 xor_int32(i32 value, bytes key);
-  i64 xor_int64(i64 value, bytes key);
-  u32 xor_uint32(u32 value, bytes key);
-  u64 xor_uint64(u64 value, bytes key);
-  i32 convert_int(i32 value, bytes key);
-  i64 convert_long(i64 value, bytes key);
-  u32 convert_uint(u32 value, bytes key);
-  u64 convert_ulong(u64 value, bytes key);
-  f32 convert_float(f32 value, bytes key);
-  f64 convert_double(f64 value, bytes key);
-  f32 encrypt_float(f32 value, bytes key);
-  f64 encrypt_double(f64 value, bytes key);
-  bytes create_key(bytes data);
-  boolean use_encryption();
-  void set_use_encryption(boolean enabled);
+  string table_decrypt_string(string value, bytes key);
+  
+  f32 table_encrypt_f32(f32 value, bytes key);
+  
+  f64 table_encrypt_f64(f64 value, bytes key);
+  
+  string table_encrypt_string(string value, bytes key);
+  
+  string get_file_path(string path, i64? crc, boolean no_hash, boolean to_lower);
 };
 
 dictionary CrcResult {
   u32 value;
   string hex;
-};
-
-dictionary Media {
-  string path;
-  string file_name;
-  i64 bytes;
-  i64 crc;
-  boolean is_prologue;
-  boolean is_split_download;
-  i32 media_type;
-};
-
-dictionary Table {
-  string name;
-  i64 size;
-  i64 crc;
-  boolean is_in_build;
-  boolean is_changed;
-  boolean is_prologue;
-  boolean is_split_download;
-  sequence<string> includes;
-};
-
-dictionary MediaCatalog {
-  record<string, Media> table;
-};
-
-dictionary TableCatalog {
-  record<string, Table> table;
-};
-
-dictionary ZipFileEntry {
-  string name;
-  bytes data;
 };

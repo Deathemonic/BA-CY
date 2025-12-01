@@ -1,21 +1,6 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TableZipError {
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-
-    #[error(transparent)]
-    Zip(#[from] zip::result::ZipError),
-
-    #[error(transparent)]
-    Base64Decode(#[from] base64::DecodeError),
-
-    #[error(transparent)]
-    EncodeSlice(#[from] base64::EncodeSliceError),
-}
-
-#[derive(Error, Debug)]
 pub enum HashError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -25,21 +10,6 @@ pub enum HashError {
 
     #[error("Expected 0x{expected:08X}, got 0x{actual:08X}")]
     Mismatch { expected: u32, actual: u32 },
-}
-
-#[derive(Error, Debug)]
-pub enum CatalogError {
-    #[error(transparent)]
-    MemoryPack(#[from] memorypack::MemoryPackError),
-
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
-
-    #[error("Failed to serialize catalog to JSON")]
-    SerializationFailed,
-
-    #[error("Failed to parse catalog from JSON")]
-    DeserializationFailed,
 }
 
 #[derive(Error, Debug)]

@@ -3,251 +3,226 @@
 //! This module contains UniFFI binding wrappers and should NOT be used directly in Rust code.
 //!
 //! **For Rust users:** Use the functions and types from the main library modules instead:
-//! - `bacy::hash::*` for hash functions
-//! - `bacy::catalog::*` for catalog operations
-//! - `bacy::crc_service::*` for CRC manipulation
-//! - `bacy::table_encryption::*` for encryption
-//! - `bacy::table_zip::*` for ZIP operations
+//! - `bacy::hash::crc::*` for CRC functions
+//! - `bacy::hash::xxhash::*` for xxHash functions
+//! - `bacy::crypto::md5::*` for MD5 functions
+//! - `bacy::crypto::xor::*` for XOR operations
+//! - `bacy::crypto::table::*` for table encryption
+//! - `bacy::utils::crc_manipulator::*` for CRC manipulation
+//! - `bacy::utils::strategy::*` for file path strategies
 //!
 //! **For other languages (Python, Swift, etc.):** Use the generated bindings from UniFFI.
 //!
 //! This module exists solely to provide UniFFI-compatible wrappers that convert between
-//! Rust types and UniFFI-compatible types (e.g., `&str` → `String`, `&[u8]` → `Vec<u8>`
+//! Rust types and UniFFI-compatible types (e.g., `&str` → `String`, `&[u8]` → `Vec<u8>`)
 
-use crate::hash::CrcResult;
-pub use crate::error::{CatalogError, HashError, TableEncryptionError, TableZipError};
+use std::path::Path;
 
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
-macro_rules! impl_bindings_struct {
-    (
-        $(#[$meta:meta])*
-        $name:ident {
-            $($field:ident: $ty:ty),* $(,)?
-        }
-    ) => {
-        $(#[$meta])*
-        #[derive(Debug, Clone, Serialize, Deserialize)]
-        pub struct $name {
-            $(pub $field: $ty),*
-        }
-
-        impl From<crate::catalog::$name> for $name {
-            fn from(value: crate::catalog::$name) -> Self {
-                Self {
-                    $($field: value.$field),*
-                }
-            }
-        }
-
-        impl From<$name> for crate::catalog::$name {
-            fn from(value: $name) -> Self {
-                Self {
-                    $($field: value.$field),*
-                }
-            }
-        }
-    };
-}
-
-impl_bindings_struct!(
-    Media {
-        path: String,
-        file_name: String,
-        bytes: i64,
-        crc: i64,
-        is_prologue: bool,
-        is_split_download: bool,
-        media_type: i32,
-    }
-);
-
-impl_bindings_struct!(
-    Table {
-        name: String,
-        size: i64,
-        crc: i64,
-        is_in_build: bool,
-        is_changed: bool,
-        is_prologue: bool,
-        is_split_download: bool,
-        includes: Vec<String>,
-    }
-);
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MediaCatalog {
-    pub table: HashMap<String, Media>,
-}
-
-impl From<crate::catalog::MediaCatalog> for MediaCatalog {
-    fn from(catalog: crate::catalog::MediaCatalog) -> Self {
-        MediaCatalog {
-            table: catalog.table.into_iter().map(|(k, v)| (k, v.into())).collect(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TableCatalog {
-    pub table: HashMap<String, Table>,
-}
-
-impl From<crate::catalog::TableCatalog> for TableCatalog {
-    fn from(catalog: crate::catalog::TableCatalog) -> Self {
-        TableCatalog {
-            table: catalog.table.into_iter().map(|(k, v)| (k, v.into())).collect(),
-        }
-    }
-}
-
-pub fn calculate_crc32(path: String) -> Result<u32, HashError> {
-    let path_buf = std::path::PathBuf::from(path);
-    crate::hash::calculate_crc32(&path_buf)
-}
-
-pub fn calculate_md5(path: String) -> Result<String, HashError> {
-    let path_buf = std::path::PathBuf::from(path);
-    crate::hash::calculate_md5(&path_buf)
-}
-
-pub fn encrypt_name(filename: String, crc: i64) -> Result<String, HashError> {
-    crate::hash::encrypt_name(&filename, crc)
-}
-
-pub fn evaluate_crc32(data: Vec<u8>) -> CrcResult {
-    crate::hash::evaluate_crc32(&data)
-}
-
-pub fn calculate_xxhash(bytes: Vec<u8>, bit64: bool, endian: bool) -> u64 {
-    crate::hash::calculate_xxhash(&bytes, bit64, endian)
-}
-
-pub fn deserialize_media_catalog(bytes: Vec<u8>) -> Result<MediaCatalog, CatalogError> {
-    Ok(crate::catalog::deserialize_media_catalog(&bytes)?.into())
-}
-
-pub fn deserialize_table_catalog(bytes: Vec<u8>) -> Result<TableCatalog, CatalogError> {
-    Ok(crate::catalog::deserialize_table_catalog(&bytes)?.into())
-}
-
-pub fn media_catalog_to_json(catalog: MediaCatalog) -> Result<String, CatalogError> {
-    Ok(serde_json::to_string_pretty(&catalog.table)?)
-}
-
-pub fn table_catalog_to_json(catalog: TableCatalog) -> Result<String, CatalogError> {
-    Ok(serde_json::to_string_pretty(&catalog.table)?)
-}
-
-pub fn xor_str(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::xor_str(&value, &key)
-}
-
-pub fn xor_data(name: String, data: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::xor(&name, &data)
-}
-
-pub fn xor_bytes(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::xor_bytes(&value, &key)
-}
-
-pub fn xor_int32(value: i32, key: Vec<u8>) -> i32 {
-    crate::table_encryption::xor_int32(value, &key)
-}
-
-pub fn xor_int64(value: i64, key: Vec<u8>) -> i64 {
-    crate::table_encryption::xor_int64(value, &key)
-}
-
-pub fn xor_uint32(value: u32, key: Vec<u8>) -> u32 {
-    crate::table_encryption::xor_uint32(value, &key)
-}
-
-pub fn xor_uint64(value: u64, key: Vec<u8>) -> u64 {
-    crate::table_encryption::xor_uint64(value, &key)
-}
-
-pub fn convert_int(value: i32, key: Vec<u8>) -> i32 {
-    crate::table_encryption::convert_int(value, &key)
-}
-
-pub fn convert_long(value: i64, key: Vec<u8>) -> i64 {
-    crate::table_encryption::convert_long(value, &key)
-}
-
-pub fn convert_uint(value: u32, key: Vec<u8>) -> u32 {
-    crate::table_encryption::convert_uint(value, &key)
-}
-
-pub fn convert_ulong(value: u64, key: Vec<u8>) -> u64 {
-    crate::table_encryption::convert_ulong(value, &key)
-}
-
-pub fn convert_float(value: f32, key: Vec<u8>) -> f32 {
-    crate::table_encryption::convert_float(value, &key)
-}
-
-pub fn convert_double(value: f64, key: Vec<u8>) -> f64 {
-    crate::table_encryption::convert_double(value, &key)
-}
-
-pub fn encrypt_float(value: f32, key: Vec<u8>) -> f32 {
-    crate::table_encryption::encrypt_float(value, &key)
-}
-
-pub fn encrypt_double(value: f64, key: Vec<u8>) -> f64 {
-    crate::table_encryption::encrypt_double(value, &key)
-}
-
-pub fn create_key(bytes: Vec<u8>) -> Vec<u8> {
-    crate::table_encryption::create_key(&bytes).to_vec()
-}
-
-pub fn convert_string(value: String, key: Vec<u8>) -> Result<String, TableEncryptionError> {
-    crate::table_encryption::convert_string(&value, &key)
-}
-
-pub fn encrypt_string(value: String, key: Vec<u8>) -> Result<String, TableEncryptionError> {
-    crate::table_encryption::encrypt_string(&value, &key)
-}
-
-pub fn extract_zip_file(
-    zip_data: Vec<u8>,
-    filename: String,
-    file_to_extract: String,
-) -> Result<Vec<u8>, TableZipError> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
-    Ok(zip_file.get_by_name(&file_to_extract)?)
-}
-
-pub fn extract_all_zip_files(
-    zip_data: Vec<u8>,
-    filename: String,
-) -> Result<Vec<ZipFileEntry>, TableZipError> {
-    let mut zip_file = crate::table_zip::TableZipFile::new(zip_data, filename.as_bytes())?;
-    let files = zip_file.extract_all()?;
-
-    Ok(files
-        .into_iter()
-        .map(|(name, data)| ZipFileEntry { name, data })
-        .collect())
-}
-
-pub use crate::table_encryption::{use_encryption, set_use_encryption};
-
-pub fn forge_crc(file_path: String, target_crc: u32) -> Result<(), HashError> {
-    let manipulator = crate::crc::CrcManipulator::new(file_path);
-    Ok(manipulator.forge_crc(target_crc)?)
-}
-
-pub fn match_crc(file_path: String, target_file_path: String) -> Result<(), HashError> {
-    let manipulator = crate::crc::CrcManipulator::new(file_path);
-    Ok(manipulator.match_file(std::path::Path::new(&target_file_path))?)
-}
+pub use crate::error::{HashError, TableEncryptionError};
 
 #[derive(Debug, Clone)]
-pub struct ZipFileEntry {
-    pub name: String,
-    pub data: Vec<u8>,
+pub struct CrcResult {
+    pub value: u32,
+    pub hex: String,
+}
+
+pub fn crc_compute_streaming(path: String, buffer_size: u64) -> Result<u32, HashError> {
+    let path_buf = Path::new(&path);
+    crate::hash::crc::compute_streaming(path_buf, buffer_size as usize)
+}
+
+#[inline]
+pub fn crc_compute_bytes(buffer: Vec<u8>) -> u32 {
+    crate::hash::crc::compute_bytes(&buffer)
+}
+
+pub fn crc_compare(path: String, expected_crc: u32) -> Result<(), HashError> {
+    let path_buf = Path::new(&path);
+    crate::hash::crc::compare(path_buf, expected_crc)
+}
+
+pub fn crc_evaluate(data: Vec<u8>) -> CrcResult {
+    let value = crate::hash::crc::compute_bytes(&data);
+    CrcResult {
+        value,
+        hex: format!("{:08X}", value),
+    }
+}
+
+pub fn crc_forge(file_path: String, target_crc: u32) -> Result<(), HashError> {
+    let manipulator = crate::utils::crc_manipulator::CrcManipulator::new(file_path);
+    manipulator.forge_crc(target_crc)
+}
+
+pub fn crc_match_file(file_path: String, target_file_path: String) -> Result<(), HashError> {
+    let manipulator = crate::utils::crc_manipulator::CrcManipulator::new(file_path);
+    let target_path = Path::new(&target_file_path);
+    manipulator.match_file(target_path)
+}
+
+#[inline]
+pub fn md5_to_hex_string(data: Vec<u8>) -> String {
+    crate::crypto::md5::to_hex_string(&data)
+}
+
+#[inline]
+pub fn md5_compute_hash(source: Vec<u8>) -> Vec<u8> {
+    crate::crypto::md5::compute_hash(&source).to_vec()
+}
+
+#[inline]
+pub fn md5_compute_hash_hmac(source: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
+    crate::crypto::md5::compute_hash_hmac(&source, &key).to_vec()
+}
+
+#[inline]
+pub fn md5_compute_hash_str(source: String) -> String {
+    crate::crypto::md5::compute_hash_str(&source)
+}
+
+#[inline]
+pub fn md5_compute_hash_str_hmac(source: String, key: String) -> String {
+    crate::crypto::md5::compute_hash_str_hmac(&source, &key)
+}
+
+#[inline]
+pub fn md5_compute_digest(source: String) -> u32 {
+    crate::crypto::md5::compute_digest(&source)
+}
+
+#[inline]
+pub fn md5_compute_digest_hmac(source: String, key: String) -> u32 {
+    crate::crypto::md5::compute_digest_hmac(&source, &key)
+}
+
+#[inline]
+pub fn md5_compute_digest64(source: String) -> u64 {
+    crate::crypto::md5::compute_digest64(&source)
+}
+
+#[inline]
+pub fn md5_compute_digest64_hmac(source: String, key: String) -> u64 {
+    crate::crypto::md5::compute_digest64_hmac(&source, &key)
+}
+
+#[inline]
+pub fn md5_compute_head(source: String) -> String {
+    crate::crypto::md5::compute_head(&source)
+}
+
+#[inline]
+pub fn xxhash_set_use_big_endian(value: bool) {
+    crate::hash::xxhash::set_use_big_endian(value);
+}
+
+#[inline]
+pub fn xxhash_get_use_big_endian() -> bool {
+    crate::hash::xxhash::get_use_big_endian()
+}
+
+#[inline]
+pub fn xxhash_calculate_hash(data: Vec<u8>) -> u32 {
+    crate::hash::xxhash::calculate_hash(&data)
+}
+
+#[inline]
+pub fn xxhash_calculate_hash_str(s: String) -> u32 {
+    crate::hash::xxhash::calculate_hash_str(&s)
+}
+
+#[inline]
+pub fn xxhash_calculate_hash64(data: Vec<u8>) -> u64 {
+    crate::hash::xxhash::calculate_hash64(&data)
+}
+
+#[inline]
+pub fn xxhash_calculate_hash64_str(s: String) -> u64 {
+    crate::hash::xxhash::calculate_hash64_str(&s)
+}
+
+pub fn xor_encrypt(mut data: Vec<u8>, offset: u64, length: u64) {
+    crate::crypto::xor::encrypt(&mut data, offset as usize, length as usize);
+}
+
+pub fn xor_encrypt_with_key(data: Vec<u8>, key: Vec<u8>) -> Option<Vec<u8>> {
+    crate::crypto::xor::encrypt_with_key(&data, &key)
+}
+
+#[inline]
+pub fn xor_exact(value: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
+    crate::crypto::xor::xor_exact(&value, &key)
+}
+
+pub fn xor_inplace_bytes(mut data: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
+    crate::crypto::xor::xor_inplace(&mut data, &key);
+    data
+}
+
+#[inline]
+pub fn table_create_key(name: String) -> Vec<u8> {
+    crate::crypto::table::create_key(&name).to_vec()
+}
+
+#[inline]
+pub fn table_create_password(key: String, length: u64) -> String {
+    crate::crypto::table::create_password(&key, length as usize)
+}
+
+pub fn table_xor(name: String, mut data: Vec<u8>) -> Vec<u8> {
+    crate::crypto::table::xor(&name, &mut data);
+    data
+}
+
+#[inline]
+pub fn table_decrypt_i32(value: i32, key: Vec<u8>) -> i32 {
+    crate::crypto::table::decrypt_i32(value, &key)
+}
+
+#[inline]
+pub fn table_decrypt_i64(value: i64, key: Vec<u8>) -> i64 {
+    crate::crypto::table::decrypt_i64(value, &key)
+}
+
+#[inline]
+pub fn table_decrypt_u32(value: u32, key: Vec<u8>) -> u32 {
+    crate::crypto::table::decrypt_u32(value, &key)
+}
+
+#[inline]
+pub fn table_decrypt_u64(value: u64, key: Vec<u8>) -> u64 {
+    crate::crypto::table::decrypt_u64(value, &key)
+}
+
+#[inline]
+pub fn table_decrypt_f32(value: f32, key: Vec<u8>) -> f32 {
+    crate::crypto::table::decrypt_f32(value, &key)
+}
+
+#[inline]
+pub fn table_decrypt_f64(value: f64, key: Vec<u8>) -> f64 {
+    crate::crypto::table::decrypt_f64(value, &key)
+}
+
+pub fn table_decrypt_string(value: String, key: Vec<u8>) -> Result<String, TableEncryptionError> {
+    crate::crypto::table::decrypt_string(&value, &key)
+}
+
+#[inline]
+pub fn table_encrypt_f32(value: f32, key: Vec<u8>) -> f32 {
+    crate::crypto::table::encrypt_f32(value, &key)
+}
+
+#[inline]
+pub fn table_encrypt_f64(value: f64, key: Vec<u8>) -> f64 {
+    crate::crypto::table::encrypt_f64(value, &key)
+}
+
+#[inline]
+pub fn table_encrypt_string(value: String, key: Vec<u8>) -> String {
+    crate::crypto::table::encrypt_string(&value, &key)
+}
+
+pub fn get_file_path(path: String, crc: Option<i64>, no_hash: bool, to_lower: bool) -> String {
+    let result = crate::utils::strategy::get_file_path(&path, crc, no_hash, to_lower);
+    result.to_string_lossy().to_string()
 }

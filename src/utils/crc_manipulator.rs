@@ -1,7 +1,5 @@
 use crate::error::HashError;
-use crate::hash::calculate_crc32;
-
-use crc32fast::{hash, Hasher};
+use crate::hash::crc;
 use std::fs;
 use std::path::Path;
 
@@ -46,10 +44,9 @@ impl CrcManipulator {
     }
 
     fn forge_bytes(data: &[u8], target_crc: u32) -> [u8; 4] {
-        let mut hasher = Hasher::new();
-        hasher.update(data);
-        hasher.update(&[0, 0, 0, 0]);
-        let padded_crc = hasher.finalize();
+        let mut data_with_padding = data.to_vec();
+        data_with_padding.extend_from_slice(&[0, 0, 0, 0]);
+        let padded_crc = crc::compute_bytes(&data_with_padding);
 
         let xor_result = target_crc ^ padded_crc;
         let xor_bytes = xor_result.to_be_bytes();
@@ -67,7 +64,7 @@ impl CrcManipulator {
     pub fn forge_crc(&self, target_crc: u32) -> Result<(), HashError> {
         let data = fs::read(&self.file_path)?;
 
-        if hash(&data) == target_crc {
+        if crc::compute_bytes(&data) == target_crc {
             return Ok(());
         }
 
@@ -78,7 +75,7 @@ impl CrcManipulator {
 
         fs::write(&self.file_path, &new_data)?;
 
-        let new_crc = hash(&new_data);
+        let new_crc = crc::compute_bytes(&new_data);
 
         match new_crc == target_crc {
             true => Ok(()),
@@ -90,7 +87,10 @@ impl CrcManipulator {
     }
 
     pub fn match_file(&self, target_file: &Path) -> Result<(), HashError> {
-        let target_crc = calculate_crc32(target_file)?;
+        if !target_file.exists() {
+            return Err(HashError::InvalidPath);
+        }
+        let target_crc = crc::compute_streaming(target_file, 0x2000)?;
         self.forge_crc(target_crc)
     }
 }
