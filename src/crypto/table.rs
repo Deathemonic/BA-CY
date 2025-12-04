@@ -3,7 +3,7 @@ use crate::error::TableEncryptionError;
 use crate::hash::xxhash;
 use crate::math::mersenne::MersenneTwister;
 
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD};
 
 #[inline]
 pub fn create_key(name: &str) -> [u8; 8] {

@@ -1,2 +1,2 @@
-pub mod xxhash;
 pub mod crc;
+pub mod xxhash;

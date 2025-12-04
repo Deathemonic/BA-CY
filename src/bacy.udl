@@ -13,89 +13,89 @@ enum TableEncryptionError {
 
 namespace bacy {
   [Throws=HashError]
-  u32 crc_compute_streaming(string path, u64 buffer_size);
+  u32 crc_compute_streaming([ByRef] string path, u64 buffer_size);
   
-  u32 crc_compute_bytes(bytes buffer);
-  
-  [Throws=HashError]
-  void crc_compare(string path, u32 expected_crc);
-  
-  CrcResult crc_evaluate(bytes data);
+  u32 crc_compute_bytes([ByRef] bytes buffer);
   
   [Throws=HashError]
-  void crc_forge(string file_path, u32 target_crc);
+  void crc_compare([ByRef] string path, u32 expected_crc);
+  
+  CrcResult crc_evaluate([ByRef] bytes data);
   
   [Throws=HashError]
-  void crc_match_file(string file_path, string target_file_path);
+  void crc_forge([ByRef] string file_path, u32 target_crc);
   
-  string md5_to_hex_string(bytes data);
+  [Throws=HashError]
+  void crc_match_file([ByRef] string file_path, [ByRef] string target_file_path);
+  
+  string md5_to_hex_string([ByRef] bytes data);
 
-  bytes md5_compute_hash(bytes source);
+  bytes md5_compute_hash([ByRef] bytes source);
   
-  bytes md5_compute_hash_hmac(bytes source, bytes key);
+  bytes md5_compute_hash_hmac([ByRef] bytes source, [ByRef] bytes key);
   
-  string md5_compute_hash_str(string source);
+  string md5_compute_hash_str([ByRef] string source);
   
-  string md5_compute_hash_str_hmac(string source, string key);
+  string md5_compute_hash_str_hmac([ByRef] string source, [ByRef] string key);
   
-  u32 md5_compute_digest(string source);
+  u32 md5_compute_digest([ByRef] string source);
   
-  u32 md5_compute_digest_hmac(string source, string key);
+  u32 md5_compute_digest_hmac([ByRef] string source, [ByRef] string key);
   
-  u64 md5_compute_digest64(string source);
+  u64 md5_compute_digest64([ByRef] string source);
   
-  u64 md5_compute_digest64_hmac(string source, string key);
+  u64 md5_compute_digest64_hmac([ByRef] string source, [ByRef] string key);
   
-  string md5_compute_head(string source);
+  string md5_compute_head([ByRef] string source);
   
   void xxhash_set_use_big_endian(boolean value);
   
   boolean xxhash_get_use_big_endian();
   
-  u32 xxhash_calculate_hash(bytes data);
+  u32 xxhash_calculate_hash([ByRef] bytes data);
   
-  u32 xxhash_calculate_hash_str(string s);
+  u32 xxhash_calculate_hash_str([ByRef] string s);
   
-  u64 xxhash_calculate_hash64(bytes data);
+  u64 xxhash_calculate_hash64([ByRef] bytes data);
   
-  u64 xxhash_calculate_hash64_str(string s);
+  u64 xxhash_calculate_hash64_str([ByRef] string s);
   
-  void xor_encrypt(bytes data, u64 offset, u64 length);
+  bytes xor_encrypt(bytes data, u64 offset, u64 length);
   
-  bytes? xor_encrypt_with_key(bytes data, bytes key);
+  bytes? xor_encrypt_with_key([ByRef] bytes data, [ByRef] bytes key);
   
-  bytes xor_exact(bytes value, bytes key);
+  bytes xor_exact([ByRef] bytes value, [ByRef] bytes key);
   
-  bytes xor_inplace_bytes(bytes data, bytes key);
+  bytes xor_inplace_bytes(bytes data, [ByRef] bytes key);
   
-  bytes table_create_key(string name);
+  bytes table_create_key([ByRef] string name);
   
-  string table_create_password(string key, u64 length);
+  string table_create_password([ByRef] string key, u64 length);
   
-  bytes table_xor(string name, bytes data);
+  bytes table_xor([ByRef] string name, bytes data);
   
-  i32 table_decrypt_i32(i32 value, bytes key);
+  i32 table_decrypt_i32(i32 value, [ByRef] bytes key);
   
-  i64 table_decrypt_i64(i64 value, bytes key);
+  i64 table_decrypt_i64(i64 value, [ByRef] bytes key);
   
-  u32 table_decrypt_u32(u32 value, bytes key);
+  u32 table_decrypt_u32(u32 value, [ByRef] bytes key);
   
-  u64 table_decrypt_u64(u64 value, bytes key);
+  u64 table_decrypt_u64(u64 value, [ByRef] bytes key);
   
-  f32 table_decrypt_f32(f32 value, bytes key);
+  f32 table_decrypt_f32(f32 value, [ByRef] bytes key);
   
-  f64 table_decrypt_f64(f64 value, bytes key);
+  f64 table_decrypt_f64(f64 value, [ByRef] bytes key);
   
   [Throws=TableEncryptionError]
-  string table_decrypt_string(string value, bytes key);
+  string table_decrypt_string([ByRef] string value, [ByRef] bytes key);
   
-  f32 table_encrypt_f32(f32 value, bytes key);
+  f32 table_encrypt_f32(f32 value, [ByRef] bytes key);
   
-  f64 table_encrypt_f64(f64 value, bytes key);
+  f64 table_encrypt_f64(f64 value, [ByRef] bytes key);
   
-  string table_encrypt_string(string value, bytes key);
+  string table_encrypt_string([ByRef] string value, [ByRef] bytes key);
   
-  string get_file_path(string path, i64? crc, boolean no_hash, boolean to_lower);
+  string get_file_path([ByRef] string path, i64? crc, boolean no_hash, boolean to_lower);
 };
 
 dictionary CrcResult {

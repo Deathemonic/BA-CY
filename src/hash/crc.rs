@@ -12,17 +12,24 @@ pub async fn compute(path: &Path) -> Result<u32, HashError> {
     }
 
     let bytes = fs::read(path).await?;
-    Ok(compute_bytes(&bytes))
+    Ok(compute_bytes(&bytes, None))
 }
 
 #[inline]
-pub fn compute_bytes(buffer: &[u8]) -> u32 {
+pub fn compute_bytes(buffer: &[u8], suffix: Option<&[u8]>) -> u32 {
     let mut hasher = Hasher::new();
     hasher.update(buffer);
+    if let Some(s) = suffix {
+        hasher.update(s);
+    }
     hasher.finalize()
 }
 
-pub fn compute_streaming(path: &Path, buffer_size: usize) -> Result<u32, HashError> {
+pub fn compute_streaming(
+    path: &Path,
+    buffer_size: usize,
+    suffix: Option<&[u8]>,
+) -> Result<u32, HashError> {
     if !path.exists() {
         return Err(HashError::InvalidPath);
     }
@@ -40,6 +47,10 @@ pub fn compute_streaming(path: &Path, buffer_size: usize) -> Result<u32, HashErr
         hasher.update(&buffer[..bytes_read]);
     }
 
+    if let Some(s) = suffix {
+        hasher.update(s);
+    }
+
     Ok(hasher.finalize())
 }
 
@@ -48,7 +59,7 @@ pub fn compare(path: &Path, expected_crc: u32) -> Result<(), HashError> {
         return Err(HashError::InvalidPath);
     }
 
-    let file_crc = compute_streaming(path, 0x2000)?;
+    let file_crc = compute_streaming(path, 0x2000, None)?;
 
     if file_crc == expected_crc {
         Ok(())
