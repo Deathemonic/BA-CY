@@ -17,6 +17,9 @@ pub enum TableEncryptionError {
     #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
 
+    #[error(transparent)]
+    FromUtf16Error(#[from] std::string::FromUtf16Error),
+
     #[error("String conversion failed")]
     StringConversionFailed,
 }

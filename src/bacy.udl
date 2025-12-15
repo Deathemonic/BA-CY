@@ -8,6 +8,7 @@ enum HashError {
 [Error]
 enum TableEncryptionError {
   "Base64Decode",
+  "FromUtf16Error",
   "StringConversionFailed",
 };
 
