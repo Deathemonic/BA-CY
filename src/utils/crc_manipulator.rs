@@ -1,8 +1,8 @@
 use crate::error::HashError;
-use crate::hash::calculate_crc32;
+use crate::hash::crc;
 
-use crc32fast::{hash, Hasher};
-use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 
 const POLY_NORMAL: u64 = 0x104C11DB7;
@@ -45,12 +45,7 @@ impl CrcManipulator {
         u32::from_be_bytes(*bytes).reverse_bits().to_be_bytes()
     }
 
-    fn forge_bytes(data: &[u8], target_crc: u32) -> [u8; 4] {
-        let mut hasher = Hasher::new();
-        hasher.update(data);
-        hasher.update(&[0, 0, 0, 0]);
-        let padded_crc = hasher.finalize();
-
+    fn forge_bytes(padded_crc: u32, target_crc: u32) -> [u8; 4] {
         let xor_result = target_crc ^ padded_crc;
         let xor_bytes = xor_result.to_be_bytes();
 
@@ -65,32 +60,25 @@ impl CrcManipulator {
     }
 
     pub fn forge_crc(&self, target_crc: u32) -> Result<(), HashError> {
-        let data = fs::read(&self.file_path)?;
+        let current_crc = crc::compute_streaming(&self.file_path, 0x2000, None)?;
 
-        if hash(&data) == target_crc {
+        if current_crc == target_crc {
             return Ok(());
         }
 
-        let patch = Self::forge_bytes(&data, target_crc);
+        let padded_crc = crc::compute_streaming(&self.file_path, 0x2000, Some(&[0, 0, 0, 0]))?;
+        let patch = Self::forge_bytes(padded_crc, target_crc);
 
-        let mut new_data = data;
-        new_data.extend_from_slice(&patch);
-
-        fs::write(&self.file_path, &new_data)?;
-
-        let new_crc = hash(&new_data);
-
-        match new_crc == target_crc {
-            true => Ok(()),
-            false => Err(HashError::Mismatch {
-                expected: target_crc,
-                actual: new_crc,
-            }),
-        }
+        let mut file = OpenOptions::new().append(true).open(&self.file_path)?;
+        file.write_all(&patch)?;
+        Ok(())
     }
 
     pub fn match_file(&self, target_file: &Path) -> Result<(), HashError> {
-        let target_crc = calculate_crc32(target_file)?;
+        if !target_file.exists() {
+            return Err(HashError::InvalidPath);
+        }
+        let target_crc = crc::compute_streaming(target_file, 0x2000, None)?;
         self.forge_crc(target_crc)
     }
 }
