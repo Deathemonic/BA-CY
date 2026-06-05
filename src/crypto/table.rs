@@ -1,9 +1,10 @@
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+
 use crate::crypto::xor::xor_inplace;
 use crate::error::TableEncryptionError;
 use crate::hash::xxhash;
 use crate::math::mersenne::MersenneTwister;
-
-use base64::{Engine, engine::general_purpose::STANDARD};
 
 #[inline]
 pub fn create_key(name: &str) -> [u8; 8] {
@@ -74,14 +75,10 @@ pub fn decrypt_u64(value: u64, key: &[u8]) -> u64 {
 pub fn decrypt_enum<T>(value: T, key: &[u8]) -> T
 where
     T: Copy + flatbuffers::EndianScalar,
-    T::Scalar: Into<i32> + From<i32> + Copy,
+    T::Scalar: Into<i32> + From<i32> + Copy
 {
     let scalar_val: i32 = value.to_little_endian().into();
-    let converted = if scalar_val != 0 {
-        decrypt_i32(scalar_val, key)
-    } else {
-        0
-    };
+    let converted = if scalar_val != 0 { decrypt_i32(scalar_val, key) } else { 0 };
     T::from_little_endian(T::Scalar::from(converted))
 }
 
@@ -105,10 +102,8 @@ pub fn decrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryption
     let mut bytes = STANDARD.decode(value)?;
     xor_inplace(&mut bytes, key);
 
-    let utf16_values: Vec<u16> = bytes
-        .chunks_exact(2)
-        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-        .collect();
+    let utf16_values: Vec<u16> =
+        bytes.chunks_exact(2).map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]])).collect();
 
     Ok(String::from_utf16(&utf16_values)?)
 }
@@ -139,9 +134,5 @@ pub fn encrypt_string(value: &str, key: &[u8]) -> String {
 fn calculate_multiplier(key_byte: u8) -> i32 {
     let mod_value = key_byte.wrapping_sub(5 * ((key_byte / 5) & 0xFE));
     let multiplier = if mod_value >= 2 { mod_value } else { 7 };
-    if (key_byte & 1) != 0 {
-        -(multiplier as i32)
-    } else {
-        multiplier as i32
-    }
+    if (key_byte & 1) != 0 { -(multiplier as i32) } else { multiplier as i32 }
 }

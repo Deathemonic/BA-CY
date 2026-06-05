@@ -1,20 +1,26 @@
 //! # WARNING: Internal UniFFI Bindings Module
 //!
-//! This module contains UniFFI binding wrappers and should NOT be used directly in Rust code.
+//! This module contains UniFFI binding wrappers and should NOT be used directly
+//! in Rust code.
 //!
-//! **For Rust users:** Use the functions and types from the main library modules instead:
+//! **For Rust users:** Use the functions and types from the main library
+//! modules instead:
 //! - `bacy::hash::crc::*` for CRC functions
+//! - `bacy::hash::sha::*` for SHA functions
 //! - `bacy::hash::xxhash::*` for xxHash functions
+//! - `bacy::crypto::aes::*` for AES functions
 //! - `bacy::crypto::md5::*` for MD5 functions
 //! - `bacy::crypto::xor::*` for XOR operations
 //! - `bacy::crypto::table::*` for table encryption
 //! - `bacy::utils::crc_manipulator::*` for CRC manipulation
 //! - `bacy::utils::strategy::*` for file path strategies
 //!
-//! **For other languages (Python, Swift, etc.):** Use the generated bindings from UniFFI.
+//! **For other languages (Python, Swift, etc.):** Use the generated bindings
+//! from UniFFI.
 //!
-//! This module exists solely to provide UniFFI-compatible wrappers that convert between
-//! Rust types and UniFFI-compatible types (e.g., `&str` → `String`, `&[u8]` → `Vec<u8>`)
+//! This module exists solely to provide UniFFI-compatible wrappers that convert
+//! between Rust types and UniFFI-compatible types (e.g., `&str` → `String`,
+//! `&[u8]` → `Vec<u8>`)
 
 use std::path::Path;
 
@@ -23,7 +29,7 @@ pub use crate::error::{HashError, TableEncryptionError};
 #[derive(Debug, Clone)]
 pub struct CrcResult {
     pub value: u32,
-    pub hex: String,
+    pub hex: String
 }
 
 pub fn crc_compute_streaming(path: &str, buffer_size: u64) -> Result<u32, HashError> {
@@ -32,9 +38,7 @@ pub fn crc_compute_streaming(path: &str, buffer_size: u64) -> Result<u32, HashEr
 }
 
 #[inline]
-pub fn crc_compute_bytes(buffer: &[u8]) -> u32 {
-    crate::hash::crc::compute_bytes(buffer, None)
-}
+pub fn crc_compute_bytes(buffer: &[u8]) -> u32 { crate::hash::crc::compute_bytes(buffer, None) }
 
 pub fn crc_compare(path: &str, expected_crc: u32) -> Result<(), HashError> {
     let path_buf = Path::new(path);
@@ -45,7 +49,7 @@ pub fn crc_evaluate(data: &[u8]) -> CrcResult {
     let value = crate::hash::crc::compute_bytes(data, None);
     CrcResult {
         value,
-        hex: format!("{:08X}", value),
+        hex: format!("{:08X}", value)
     }
 }
 
@@ -61,9 +65,7 @@ pub fn crc_match_file(file_path: &str, target_file_path: &str) -> Result<(), Has
 }
 
 #[inline]
-pub fn md5_to_hex_string(data: &[u8]) -> String {
-    crate::crypto::md5::to_hex_string(data)
-}
+pub fn md5_to_hex_string(data: &[u8]) -> String { crate::crypto::md5::to_hex_string(data) }
 
 #[inline]
 pub fn md5_compute_hash(source: &[u8]) -> Vec<u8> {
@@ -76,9 +78,7 @@ pub fn md5_compute_hash_hmac(source: &[u8], key: &[u8]) -> Vec<u8> {
 }
 
 #[inline]
-pub fn md5_compute_hash_str(source: &str) -> String {
-    crate::crypto::md5::compute_hash_str(source)
-}
+pub fn md5_compute_hash_str(source: &str) -> String { crate::crypto::md5::compute_hash_str(source) }
 
 #[inline]
 pub fn md5_compute_hash_str_hmac(source: &str, key: &str) -> String {
@@ -86,9 +86,7 @@ pub fn md5_compute_hash_str_hmac(source: &str, key: &str) -> String {
 }
 
 #[inline]
-pub fn md5_compute_digest(source: &str) -> u32 {
-    crate::crypto::md5::compute_digest(source)
-}
+pub fn md5_compute_digest(source: &str) -> u32 { crate::crypto::md5::compute_digest(source) }
 
 #[inline]
 pub fn md5_compute_digest_hmac(source: &str, key: &str) -> u32 {
@@ -96,9 +94,7 @@ pub fn md5_compute_digest_hmac(source: &str, key: &str) -> u32 {
 }
 
 #[inline]
-pub fn md5_compute_digest64(source: &str) -> u64 {
-    crate::crypto::md5::compute_digest64(source)
-}
+pub fn md5_compute_digest64(source: &str) -> u64 { crate::crypto::md5::compute_digest64(source) }
 
 #[inline]
 pub fn md5_compute_digest64_hmac(source: &str, key: &str) -> u64 {
@@ -106,39 +102,31 @@ pub fn md5_compute_digest64_hmac(source: &str, key: &str) -> u64 {
 }
 
 #[inline]
-pub fn md5_compute_head(source: &str) -> String {
-    crate::crypto::md5::compute_head(source)
-}
+pub fn md5_compute_head(source: &str) -> String { crate::crypto::md5::compute_head(source) }
 
 #[inline]
-pub fn xxhash_set_use_big_endian(value: bool) {
-    crate::hash::xxhash::set_use_big_endian(value);
-}
+pub fn sha_compute(source: &[u8]) -> Vec<u8> { crate::hash::sha::compute(source).to_vec() }
 
 #[inline]
-pub fn xxhash_get_use_big_endian() -> bool {
-    crate::hash::xxhash::get_use_big_endian()
-}
+pub fn sha_compute_str(source: &str) -> Vec<u8> { crate::hash::sha::compute_str(source).to_vec() }
 
 #[inline]
-pub fn xxhash_calculate_hash(data: &[u8]) -> u32 {
-    crate::hash::xxhash::calculate_hash(data)
-}
+pub fn xxhash_set_use_big_endian(value: bool) { crate::hash::xxhash::set_use_big_endian(value); }
 
 #[inline]
-pub fn xxhash_calculate_hash_str(s: &str) -> u32 {
-    crate::hash::xxhash::calculate_hash_str(s)
-}
+pub fn xxhash_get_use_big_endian() -> bool { crate::hash::xxhash::get_use_big_endian() }
 
 #[inline]
-pub fn xxhash_calculate_hash64(data: &[u8]) -> u64 {
-    crate::hash::xxhash::calculate_hash64(data)
-}
+pub fn xxhash_calculate_hash(data: &[u8]) -> u32 { crate::hash::xxhash::calculate_hash(data) }
 
 #[inline]
-pub fn xxhash_calculate_hash64_str(s: &str) -> u64 {
-    crate::hash::xxhash::calculate_hash64_str(s)
-}
+pub fn xxhash_calculate_hash_str(s: &str) -> u32 { crate::hash::xxhash::calculate_hash_str(s) }
+
+#[inline]
+pub fn xxhash_calculate_hash64(data: &[u8]) -> u64 { crate::hash::xxhash::calculate_hash64(data) }
+
+#[inline]
+pub fn xxhash_calculate_hash64_str(s: &str) -> u64 { crate::hash::xxhash::calculate_hash64_str(s) }
 
 pub fn xor_encrypt(mut data: Vec<u8>, offset: u64, length: u64) -> Vec<u8> {
     crate::crypto::xor::encrypt(&mut data, offset as usize, length as usize);
@@ -150,9 +138,7 @@ pub fn xor_encrypt_with_key(data: &[u8], key: &[u8]) -> Option<Vec<u8>> {
 }
 
 #[inline]
-pub fn xor_exact(value: &[u8], key: &[u8]) -> Vec<u8> {
-    crate::crypto::xor::xor_exact(value, key)
-}
+pub fn xor_exact(value: &[u8], key: &[u8]) -> Vec<u8> { crate::crypto::xor::xor_exact(value, key) }
 
 pub fn xor_inplace_bytes(mut data: Vec<u8>, key: &[u8]) -> Vec<u8> {
     crate::crypto::xor::xor_inplace(&mut data, key);
@@ -160,9 +146,7 @@ pub fn xor_inplace_bytes(mut data: Vec<u8>, key: &[u8]) -> Vec<u8> {
 }
 
 #[inline]
-pub fn table_create_key(name: &str) -> Vec<u8> {
-    crate::crypto::table::create_key(name).to_vec()
-}
+pub fn table_create_key(name: &str) -> Vec<u8> { crate::crypto::table::create_key(name).to_vec() }
 
 #[inline]
 pub fn table_create_password(key: &str, length: u64) -> String {

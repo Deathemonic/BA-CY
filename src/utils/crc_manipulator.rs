@@ -1,22 +1,22 @@
-use crate::error::HashError;
-use crate::hash::crc;
-
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
+
+use crate::error::HashError;
+use crate::hash::crc;
 
 const POLY_NORMAL: u64 = 0x104C11DB7;
 const POLY_DEGREE: i32 = 32;
 const GF2_INVERSE_X32: u64 = 0xCBF1ACDA;
 
 pub struct CrcManipulator {
-    pub file_path: Box<Path>,
+    pub file_path: Box<Path>
 }
 
 impl CrcManipulator {
     pub fn new(file_path: impl AsRef<Path>) -> Self {
         Self {
-            file_path: file_path.as_ref().into(),
+            file_path: file_path.as_ref().into()
         }
     }
 

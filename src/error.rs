@@ -9,7 +9,7 @@ pub enum HashError {
     InvalidPath,
 
     #[error("Expected 0x{expected:08X}, got 0x{actual:08X}")]
-    Mismatch { expected: u32, actual: u32 },
+    Mismatch { expected: u32, actual: u32 }
 }
 
 #[derive(Error, Debug)]
@@ -21,5 +21,11 @@ pub enum TableEncryptionError {
     FromUtf16Error(#[from] std::string::FromUtf16Error),
 
     #[error("String conversion failed")]
-    StringConversionFailed,
+    StringConversionFailed
+}
+
+#[derive(Error, Debug)]
+pub enum AesError {
+    #[error("Decryption failed")]
+    Decrypt
 }

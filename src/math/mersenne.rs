@@ -1,24 +1,18 @@
 use rand_mt::Mt;
 
 pub struct MersenneTwister {
-    rng: Mt,
+    rng: Mt
 }
 
 impl MersenneTwister {
     #[inline]
-    pub fn new(seed: u32) -> Self {
-        Self { rng: Mt::new(seed) }
-    }
+    pub fn new(seed: u32) -> Self { Self { rng: Mt::new(seed) } }
 
     #[inline]
-    pub fn next(&mut self) -> u32 {
-        self.rng.next_u32() >> 1
-    }
+    pub fn next(&mut self) -> u32 { self.rng.next_u32() >> 1 }
 
     #[inline]
-    pub fn next_u32(&mut self) -> u32 {
-        self.rng.next_u32()
-    }
+    pub fn next_u32(&mut self) -> u32 { self.rng.next_u32() }
 
     #[inline]
     pub fn next_u64(&mut self) -> u64 {
@@ -41,9 +35,7 @@ impl MersenneTwister {
     }
 
     #[inline]
-    pub fn next_f32(&mut self) -> f32 {
-        self.rng.next_u32() as f32 * (1.0 / 4294967296.0)
-    }
+    pub fn next_f32(&mut self) -> f32 { self.rng.next_u32() as f32 * (1.0 / 4294967296.0) }
 
     #[inline]
     pub fn next_f64(&mut self) -> f64 {

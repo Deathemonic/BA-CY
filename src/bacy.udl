@@ -48,6 +48,10 @@ namespace bacy {
   u64 md5_compute_digest64_hmac([ByRef] string source, [ByRef] string key);
   
   string md5_compute_head([ByRef] string source);
+
+  bytes sha_compute([ByRef] bytes source);
+
+  bytes sha_compute_str([ByRef] string source);
   
   void xxhash_set_use_big_endian(boolean value);
   
