@@ -111,12 +111,6 @@ pub fn sha_compute(source: &[u8]) -> Vec<u8> { crate::hash::sha::compute(source)
 pub fn sha_compute_str(source: &str) -> Vec<u8> { crate::hash::sha::compute_str(source).to_vec() }
 
 #[inline]
-pub fn xxhash_set_use_big_endian(value: bool) { crate::hash::xxhash::set_use_big_endian(value); }
-
-#[inline]
-pub fn xxhash_get_use_big_endian() -> bool { crate::hash::xxhash::get_use_big_endian() }
-
-#[inline]
 pub fn xxhash_calculate_hash(data: &[u8]) -> u32 { crate::hash::xxhash::calculate_hash(data) }
 
 #[inline]
