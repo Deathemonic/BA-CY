@@ -9,81 +9,63 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    name: Build for ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
 
     strategy:
       matrix:
-        include:
-          - os: windows
-            arch: x86_64
-            runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            lib_name: bacy.dll
-          - os: windows
-            arch: aarch64
-            runner: windows-latest
-            target: aarch64-pc-windows-msvc
-            lib_name: bacy.dll
-          - os: macos
-            arch: x86_64
-            runner: macos-15
-            target: x86_64-apple-darwin
-            lib_name: libbacy.dylib
-          - os: macos
-            arch: aarch64
-            runner: macos-15
-            target: aarch64-apple-darwin
-            lib_name: libbacy.dylib
-          - os: linux
-            arch: x86_64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            lib_name: libbacy.so
-          - os: linux
-            arch: aarch64
-            runner: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
-            lib_name: libbacy.so
+        config:
+          - { name: windows-x86_64, os: windows-latest, target: x86_64-pc-windows-msvc, lib_name: bacy.dll }
+          - { name: windows-aarch64, os: windows-latest, target: aarch64-pc-windows-msvc, lib_name: bacy.dll }
+          - { name: macos-x86_64, os: macos-15, target: x86_64-apple-darwin, lib_name: libbacy.dylib }
+          - { name: macos-aarch64, os: macos-15, target: aarch64-apple-darwin, lib_name: libbacy.dylib }
+          - { name: linux-x86_64, os: ubuntu-latest, target: x86_64-unknown-linux-gnu, lib_name: libbacy.so }
+          - { name: linux-aarch64, os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, lib_name: libbacy.so }
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.config.target }}
 
-      - name: Cache cargo registry
+      - name: Cache Cargo dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.config.target }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build (C API)
+        run: cargo build --release -p bacy-ffi --target ${{ matrix.config.target }}
 
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }} --features uniffi
-
-      - name: Prepare artifacts
+      - name: Prepare C API artifact
         shell: bash
         run: |
-          mkdir -p ./publish/${{ matrix.target }}
-          cp target/${{ matrix.target }}/release/${{ matrix.lib_name }} ./publish/${{ matrix.target }}/
+          mkdir -p ./publish/c-api
+          cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} ./publish/c-api/
 
-      - name: Upload build artifacts
+      - name: Build (UniFFI)
+        run: cargo build --release -p bacy-ffi --target ${{ matrix.config.target }} --features uniffi
+
+      - name: Prepare UniFFI artifact
+        shell: bash
+        run: |
+          mkdir -p ./publish/uniffi
+          cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} ./publish/uniffi/
+
+      - name: Upload C API artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-${{ matrix.target }}
-          path: publish/${{ matrix.target }}
+          name: bacy-${{ matrix.config.name }}-c-api
+          path: publish/c-api
+
+      - name: Upload UniFFI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bacy-${{ matrix.config.name }}-uniffi
+          path: publish/uniffi
