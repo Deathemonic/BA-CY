@@ -58,6 +58,17 @@ jobs:
           mkdir -p ./publish/uniffi
           cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} ./publish/uniffi/
 
+      - name: Generate bindings
+        shell: bash
+        run: |
+          for lang in kotlin swift python ruby; do
+            mkdir -p ./publish/uniffi/bindings/$lang
+            cargo run --release -p bacy-ffi --bin uniffi-bindgen --features "uniffi uniffi/cli" -- generate \
+              --library target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} \
+              --language $lang \
+              --out-dir ./publish/uniffi/bindings/$lang
+          done
+
       - name: Upload C API artifact
         uses: actions/upload-artifact@v4
         with:
