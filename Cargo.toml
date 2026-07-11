@@ -1,36 +1,17 @@
-[package]
-name = "bacy"
-version = "3.2.0"
+[workspace]
+resolver = "3"
+members = [
+    "crates/bacy",
+    "crates/bacy-ffi",
+]
+default-members = [
+    "crates/bacy",
+]
+
+[workspace.package]
+version = "3.3.0"
 edition = "2024"
+authors = ["Zinth"]
 
-[[bin]]
-name = "bindgen"
-path = "bindgen.rs"
-required-features = ["uniffi"]
-
-[lib]
-name = "bacy"
-path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
-
-[features]
-default = []
-uniffi = ["dep:uniffi"]
-
-[dependencies]
-md-5 = "0.11"
-hmac = "0.13"
-sha2 = "0.11.0"
-aes = "0.9.1"
-cbc = { version = "0.2.1", features = ["alloc"] }
-xxhash-rust = { version = "0.8", features = ["xxh32", "xxh64"] }
-crc32fast = "1.5"
-rand_mt = "6.0"
-base64 = "0.22"
-thiserror = "2.0"
-flatbuffers = "25.12"
-tokio = { version = "1", features = ["fs", "io-util"] }
-uniffi = { version = "0.29.5", features = ["cli"], optional = true }
-
-[build-dependencies]
-uniffi = { version = "0.29.5", features = ["build"], optional = true }
+[workspace.dependencies]
+bacy = { path = "crates/bacy" }

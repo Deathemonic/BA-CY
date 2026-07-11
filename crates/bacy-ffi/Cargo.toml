@@ -1,0 +1,29 @@
+[package]
+name = "bacy-ffi"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[lib]
+name = "bacy"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[features]
+default = ["c-api"]
+c-api = []
+uniffi = ["dep:uniffi"]
+uniffi_cli = ["uniffi/cli"]
+
+[dependencies]
+bacy = { workspace = true }
+uniffi = { version = "0.32", optional = true }
+thiserror = "2.0"
+
+[build-dependencies]
+uniffi = { version = "0.32", features = ["build"] }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "bindgen.rs"
+required-features = ["uniffi/cli"]
