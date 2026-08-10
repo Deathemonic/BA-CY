@@ -32,11 +32,11 @@ pub fn xor(name: &str, bytes: &mut [u8]) {
 
     let (chunks, remainder) = bytes.as_chunks_mut::<4>();
     for chunk in chunks {
-        *chunk = (mt.next_u32() ^ u32::from_le_bytes(*chunk)).to_le_bytes();
+        *chunk = (mt.next() ^ u32::from_le_bytes(*chunk)).to_le_bytes();
     }
 
     if !remainder.is_empty() {
-        let xor_key = mt.next_u32().to_le_bytes();
+        let xor_key = mt.next().to_le_bytes();
         for (i, byte) in remainder.iter_mut().enumerate() {
             *byte ^= xor_key[i];
         }
@@ -132,7 +132,7 @@ pub fn encrypt_string(value: &str, key: &[u8]) -> String {
 
 #[inline]
 fn calculate_multiplier(key_byte: u8) -> i32 {
-    let mod_value = key_byte.wrapping_sub(5 * ((key_byte / 5) & 0xFE));
-    let multiplier = if mod_value >= 2 { mod_value } else { 7 };
-    if (key_byte & 1) != 0 { -(multiplier as i32) } else { multiplier as i32 }
+    let mod_value = (key_byte % 10) as i32;
+    let multiplier = if mod_value <= 1 { 7 } else { mod_value };
+    if (key_byte & 1) != 0 { -multiplier } else { multiplier }
 }
