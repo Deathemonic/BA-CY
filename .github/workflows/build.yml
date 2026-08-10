@@ -1,10 +1,6 @@
 name: Build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -24,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -32,7 +28,7 @@ jobs:
           targets: ${{ matrix.config.target }}
 
       - name: Cache Cargo dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -70,13 +66,13 @@ jobs:
           done
 
       - name: Upload C API artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bacy-${{ matrix.config.name }}-c-api
           path: publish/c-api
 
       - name: Upload UniFFI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bacy-${{ matrix.config.name }}-uniffi
           path: publish/uniffi
