@@ -36,7 +36,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ matrix.config.target }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build Diplomat library
+      - name: Build FFI library
         run: cargo build --release --locked -p bacy-ffi --target ${{ matrix.config.target }}
 
       - name: Check generated headers
@@ -52,8 +52,8 @@ jobs:
           cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} publish/
           cp ffi/bacy/bindings/*.h publish/include/
 
-      - name: Upload Diplomat artifact
+      - name: Upload FFI artifact
         uses: actions/upload-artifact@v7
         with:
-          name: bacy-${{ matrix.config.name }}-diplomat
+          name: bacy-${{ matrix.config.name }}-sdk
           path: publish
