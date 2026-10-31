@@ -8,15 +8,20 @@ name = "bacy"
 path = "src/lib.rs"
 
 [dependencies]
-md-5 = "0.11"
-hmac = "0.13"
-sha2 = "0.11"
 aes = "0.9"
-cbc = { version = "0.2", features = ["alloc"] }
-xxhash-rust = { version = "0.8", features = ["xxh32", "xxh64"] }
-crc32fast = "1.5"
-rand_mt = "6.0"
 base64 = "0.22"
-thiserror = "2.0"
+cbc = { version = "0.2", features = ["alloc"] }
+crc32fast = "1.5"
+crc64fast = "1.1"
 flatbuffers = "25.12"
+hmac = "0.13"
+md-5 = "0.11"
+rand_mt = "6.0"
+sha1 = "0.11"
+sha2 = "0.11"
+thiserror = "2.0"
 tokio = { version = "1", features = ["fs", "io-util"] }
+xxhash-rust = { version = "0.8", features = ["xxh32", "xxh64"] }
+
+[lints]
+workspace = true

@@ -1,4 +1,4 @@
-const ENCRYPTION_KEY: u32 = 2948064217;
+const ENCRYPTION_KEY: u32 = 2_948_064_217;
 
 #[inline]
 pub fn encrypt(data: &mut [u8], offset: usize, length: usize) {
@@ -7,7 +7,7 @@ pub fn encrypt(data: &mut [u8], offset: usize, length: usize) {
     }
 
     let end = (offset + length).min(data.len());
-    let key_byte = (ENCRYPTION_KEY & 0xFF) as u8;
+    let key_byte = (ENCRYPTION_KEY & 0xff) as u8;
 
     data[offset..end].iter_mut().for_each(|byte| *byte ^= key_byte);
 }
