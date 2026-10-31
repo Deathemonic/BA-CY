@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/bacy", "crates/bacy-ffi"]
+members = ["crates/bacy", "ffi/bacy"]
 default-members = ["crates/bacy"]
 
 [workspace.package]

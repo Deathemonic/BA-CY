@@ -21,20 +21,11 @@ cargo add --git https://github.com/Deathemonic/BA-CY bacy
 
 ### Other languages
 
-Build `bacy-ffi` from this repository to get either a compiled library
-(`.so` / `.dll` / `.dylib`) exposing a plain C API, or UniFFI-generated
-bindings for Kotlin, Swift, Python, and Ruby.
+Build the FFI library:
 
 ```sh
-# Plain C API only (default, no UniFFI dependency)
 cargo build --release -p bacy-ffi
-
-# With UniFFI bindings enabled
-cargo build --release -p bacy-ffi --features uniffi
 ```
-
-See [`crates/bacy-ffi`](crates/bacy-ffi) for details on generating
-bindings for a specific language.
 
 ---
 
