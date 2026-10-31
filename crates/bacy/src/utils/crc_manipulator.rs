@@ -5,9 +5,9 @@ use std::path::Path;
 use crate::error::HashError;
 use crate::hash::crc;
 
-const POLY_NORMAL: u64 = 0x104C11DB7;
+const POLY_NORMAL: u64 = 0x0001_04c1_1db7;
 const POLY_DEGREE: i32 = 32;
-const GF2_INVERSE_X32: u64 = 0xCBF1ACDA;
+const GF2_INVERSE_X32: u64 = 0xcbf1_acda;
 
 pub struct CrcManipulator {
     pub file_path: Box<Path>
@@ -21,8 +21,8 @@ impl CrcManipulator {
     }
 
     #[inline]
-    fn gf2_multiply_mod(mut a: u64, mut b: u64) -> u64 {
-        let mut result = 0u64;
+    const fn gf2_multiply_mod(mut a: u64, mut b: u64) -> u64 {
+        let mut result = 0_u64;
 
         while b != 0 {
             if b & 1 != 0 {
@@ -41,7 +41,7 @@ impl CrcManipulator {
     }
 
     #[inline]
-    fn reverse_bits(bytes: &[u8; 4]) -> [u8; 4] {
+    const fn reverse_bits(bytes: &[u8; 4]) -> [u8; 4] {
         u32::from_be_bytes(*bytes).reverse_bits().to_be_bytes()
     }
 
@@ -56,17 +56,17 @@ impl CrcManipulator {
         let p_value = Self::gf2_multiply_mod(k, GF2_INVERSE_X32);
         let p_bytes = (p_value as u32).to_be_bytes();
 
-        p_bytes.map(|b| b.reverse_bits())
+        p_bytes.map(u8::reverse_bits)
     }
 
     pub fn forge_crc(&self, target_crc: u32) -> Result<(), HashError> {
-        let current_crc = crc::compute_streaming(&self.file_path, 0x2000, None)?;
+        let current_crc = crc::compute_streaming(&self.file_path, 0x2000)?;
 
         if current_crc == target_crc {
             return Ok(());
         }
 
-        let padded_crc = crc::compute_streaming(&self.file_path, 0x2000, Some(&[0, 0, 0, 0]))?;
+        let padded_crc = crc::pad_zeros(current_crc);
         let patch = Self::forge_bytes(padded_crc, target_crc);
 
         let mut file = OpenOptions::new().append(true).open(&self.file_path)?;
@@ -78,7 +78,7 @@ impl CrcManipulator {
         if !target_file.exists() {
             return Err(HashError::InvalidPath);
         }
-        let target_crc = crc::compute_streaming(target_file, 0x2000, None)?;
+        let target_crc = crc::compute_streaming(target_file, 0x2000)?;
         self.forge_crc(target_crc)
     }
 }

@@ -10,7 +10,7 @@ use crate::math::mersenne::MersenneTwister;
 pub fn create_key(name: &str) -> [u8; 8] {
     let hash = xxhash::calculate_hash_str(name);
     let mut mt = MersenneTwister::new(hash);
-    let mut key = [0u8; 8];
+    let mut key = [0_u8; 8];
     mt.next_bytes(&mut key);
     key
 }
@@ -20,7 +20,7 @@ pub fn create_password(key: &str, length: usize) -> String {
     let mut mt = MersenneTwister::new(hash);
 
     let byte_length = length * 3 / 4;
-    let mut bytes = vec![0u8; byte_length];
+    let mut bytes = vec![0_u8; byte_length];
     mt.next_bytes(&mut bytes);
 
     STANDARD.encode(&bytes)
@@ -91,7 +91,7 @@ pub fn decrypt_f32(value: f32, key: &[u8]) -> f32 {
 #[inline]
 pub fn decrypt_f64(value: f64, key: &[u8]) -> f64 {
     let divisor = calculate_multiplier(key[0]);
-    value / divisor as f64 / 1000000.0
+    value / divisor as f64 / 1_000_000.0
 }
 
 pub fn decrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryptionError> {
@@ -102,8 +102,12 @@ pub fn decrypt_string(value: &str, key: &[u8]) -> Result<String, TableEncryption
     let mut bytes = STANDARD.decode(value)?;
     xor_inplace(&mut bytes, key);
 
-    let utf16_values: Vec<u16> =
-        bytes.chunks_exact(2).map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]])).collect();
+    let utf16_values: Vec<u16> = bytes
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+        .collect();
 
     Ok(String::from_utf16(&utf16_values)?)
 }
@@ -117,7 +121,7 @@ pub fn encrypt_f32(value: f32, key: &[u8]) -> f32 {
 #[inline]
 pub fn encrypt_f64(value: f64, key: &[u8]) -> f64 {
     let multiplier = calculate_multiplier(key[0]);
-    ((value * 1000000.0) as i32 * multiplier) as f64
+    ((value * 1_000_000.0) as i32 * multiplier) as f64
 }
 
 pub fn encrypt_string(value: &str, key: &[u8]) -> String {
@@ -125,13 +129,13 @@ pub fn encrypt_string(value: &str, key: &[u8]) -> String {
         return String::new();
     }
 
-    let mut bytes: Vec<u8> = value.encode_utf16().flat_map(|c| c.to_le_bytes()).collect();
+    let mut bytes: Vec<u8> = value.encode_utf16().flat_map(u16::to_le_bytes).collect();
     xor_inplace(&mut bytes, key);
     STANDARD.encode(&bytes)
 }
 
 #[inline]
-fn calculate_multiplier(key_byte: u8) -> i32 {
+const fn calculate_multiplier(key_byte: u8) -> i32 {
     let mod_value = (key_byte % 10) as i32;
     let multiplier = if mod_value <= 1 { 7 } else { mod_value };
     if (key_byte & 1) != 0 { -multiplier } else { multiplier }

@@ -8,6 +8,7 @@ impl MersenneTwister {
     #[inline]
     pub fn new(seed: u32) -> Self { Self { rng: Mt::new(seed) } }
 
+    #[allow(clippy::should_implement_trait)]
     #[inline]
     pub fn next(&mut self) -> u32 { self.rng.next_u32() >> 1 }
 
@@ -35,18 +36,18 @@ impl MersenneTwister {
     }
 
     #[inline]
-    pub fn next_f32(&mut self) -> f32 { self.rng.next_u32() as f32 * (1.0 / 4294967296.0) }
+    pub fn next_f32(&mut self) -> f32 { self.rng.next_u32() as f32 * (1.0 / 4_294_967_296.0) }
 
     #[inline]
     pub fn next_f64(&mut self) -> f64 {
         let a = (self.rng.next_u32() >> 5) as f64;
         let b = (self.rng.next_u32() >> 6) as f64;
-        (a * 67108864.0 + b) * (1.0 / 9007199254740992.0)
+        a.mul_add(67_108_864.0, b) * (1.0 / 9_007_199_254_740_992.0)
     }
 
     #[inline]
     pub fn next_range(&mut self, min: i32, max: i32) -> i32 {
         let (min, max) = if min > max { (max, min) } else { (min, max) };
-        ((max - min) as f64 * self.next_f64() + min as f64).floor() as i32
+        ((max - min) as f64).mul_add(self.next_f64(), min as f64).floor() as i32
     }
 }

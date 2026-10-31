@@ -36,43 +36,24 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ matrix.config.target }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build (C API)
-        run: cargo build --release -p bacy-ffi --target ${{ matrix.config.target }}
+      - name: Build FFI library
+        run: cargo build --release --locked -p bacy-ffi --target ${{ matrix.config.target }}
 
-      - name: Prepare C API artifact
+      - name: Check generated headers
         shell: bash
         run: |
-          mkdir -p ./publish/c-api
-          cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} ./publish/c-api/
+          git diff --exit-code -- ffi/bacy/bindings
+          test -z "$(git ls-files --others --exclude-standard -- ffi/bacy/bindings)"
 
-      - name: Build (UniFFI)
-        run: cargo build --release -p bacy-ffi --target ${{ matrix.config.target }} --features uniffi
-
-      - name: Prepare UniFFI artifact
+      - name: Prepare artifact
         shell: bash
         run: |
-          mkdir -p ./publish/uniffi
-          cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} ./publish/uniffi/
+          mkdir -p publish/include
+          cp target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} publish/
+          cp ffi/bacy/bindings/*.h publish/include/
 
-      - name: Generate bindings
-        shell: bash
-        run: |
-          for lang in kotlin swift python ruby; do
-            mkdir -p ./publish/uniffi/bindings/$lang
-            cargo run --release -p bacy-ffi --bin uniffi-bindgen --features "uniffi uniffi/cli" -- generate \
-              --library target/${{ matrix.config.target }}/release/${{ matrix.config.lib_name }} \
-              --language $lang \
-              --out-dir ./publish/uniffi/bindings/$lang
-          done
-
-      - name: Upload C API artifact
+      - name: Upload FFI artifact
         uses: actions/upload-artifact@v7
         with:
-          name: bacy-${{ matrix.config.name }}-c-api
-          path: publish/c-api
-
-      - name: Upload UniFFI artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: bacy-${{ matrix.config.name }}-uniffi
-          path: publish/uniffi
+          name: bacy-${{ matrix.config.name }}-sdk
+          path: publish

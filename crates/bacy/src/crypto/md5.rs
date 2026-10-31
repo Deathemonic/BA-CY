@@ -1,16 +1,50 @@
+use std::fmt::Write;
+use std::fs::File;
+use std::io::{ErrorKind, Read};
+use std::path::Path;
+
 use hmac::{Hmac, KeyInit, Mac};
 use md5::{Digest, Md5};
+
+use crate::error::HashError;
+
+const MIN_BUFFER_SIZE: usize = 4096;
 
 type HmacMd5 = Hmac<Md5>;
 
 pub fn to_hex_string(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+    bytes.iter().fold(String::with_capacity(bytes.len() * 2), |mut out, b| {
+        let _ = write!(out, "{b:02x}");
+        out
+    })
 }
 
 pub fn compute_hash(source: &[u8]) -> [u8; 16] {
     let mut hasher = Md5::new();
     hasher.update(source);
     hasher.finalize().into()
+}
+
+pub fn compute_streaming(path: &Path, buffer_size: usize) -> Result<String, HashError> {
+    let mut file = File::open(path).map_err(|error| match error.kind() {
+        ErrorKind::NotFound => HashError::InvalidPath,
+        _ => HashError::Io(error)
+    })?;
+
+    let mut hasher = Md5::new();
+    let mut buffer = vec![0_u8; buffer_size.max(MIN_BUFFER_SIZE)];
+
+    loop {
+        let bytes_read = file.read(&mut buffer)?;
+
+        if bytes_read == 0 {
+            break;
+        }
+
+        hasher.update(&buffer[..bytes_read]);
+    }
+
+    Ok(to_hex_string(&hasher.finalize()))
 }
 
 pub fn compute_hash_hmac(source: &[u8], key: &[u8]) -> [u8; 16] {
